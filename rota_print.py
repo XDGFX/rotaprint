@@ -5,7 +5,7 @@
 # Copyright (C) Callum Morrison - All Rights Reserved
 # Unauthorized copying of this file, via any medium is strictly prohibited
 # Proprietary and confidential
-# Callum Morrison, 2020
+# Written by Callum Morrison <callum.morrison@mac.com>, 2020
 
 import serial
 import time
