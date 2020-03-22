@@ -1,3 +1,4 @@
+# Create a venv for Python to allow installation of dependencies without affecting the host os!
 > Instructions are for UNIX based operating systems, as this was used for development
 
 1. Check `pip` and `venv` are installed
