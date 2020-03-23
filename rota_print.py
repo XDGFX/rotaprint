@@ -80,7 +80,7 @@ class grbl:
         # "$11": 0.010,   # Junction deviation, mm
         # "$12": 0.002,   # Arc tolerance, mm
         # "$13": 0,       # Report inches, boolean
-        "$20": 1,       # Soft limits, boolean
+        "$20": 0,       # Soft limits, boolean !!! Should be enabled for real use
         # "$21": 0,       # Hard limits, boolean
         "$22": 1,       # Homin$ cycle, boolean
         "$23": 0,       # Homin$ dir invert, mask
@@ -107,21 +107,9 @@ class grbl:
     }
 
     def __init__(self):
-
-        self.s = self.connect()
-
-        if args.verbose:
-            print("Sending settings to firmware...")
-
-        temp_settings = list()
-
-        for key in self.settings:
-            temp_settings.append(key + "=" + str(self.settings[key]))
-
-        # self.send(temp_settings)
+        pass
 
     def connect(self):
-
         # Connect to serial
         s = serial.Serial(args.com, 115200)
 
@@ -134,15 +122,26 @@ class grbl:
 
         return s
 
+    def send_settings(self):
+        if args.verbose:
+            print("Sending settings to firmware...")
+
+        temp_settings = list()
+
+        for key in self.settings:
+            temp_settings.append(key + "=" + str(self.settings[key]))
+
+        self.send(temp_settings, True)
+
     def send_status_query(self):
-        self.s.write('?'.encode())
+        s.write('?'.encode())
 
     def periodic_timer(self):
         while is_run:
             self.send_status_query()
             time.sleep(report_interval)
 
-    def send(self, data):
+    def send(self, data, settings_mode=False):
         l_count = 0
         error_count = 0
         start_time = time.time()
@@ -159,11 +158,11 @@ class grbl:
                     print("SND>"+str(l_count)+": \"" + l_block + "\"")
 
                 # Send g-code block to grbl
-                self.s.write((l_block + '\n').encode())
+                s.write((l_block + '\n').encode())
 
                 while 1:
                     # Wait for grbl response with carriage return
-                    grbl_out = self.s.readline().strip().decode()
+                    grbl_out = s.readline().strip().decode()
 
                     if grbl_out.find('ok') >= 0:
                         if args.verbose:
@@ -196,8 +195,8 @@ class grbl:
                 c_line.append(len(l_block) + 1)
                 grbl_out = ''
 
-                while sum(c_line) >= rx_buffer_size - 1 | self.s.inWaiting():
-                    out_temp = self.s.readline().strip().decode()  # Wait for grbl response
+                while sum(c_line) >= rx_buffer_size - 1 | s.inWaiting():
+                    out_temp = s.readline().strip().decode()  # Wait for grbl response
 
                     if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
                         print("    MSG: \""+out_temp+"\"")  # Debug response
@@ -217,14 +216,14 @@ class grbl:
                 data_to_send = l_block + '\n'
 
                 # Send g-code block to grbl
-                self.s.write(data_to_send.encode())
+                s.write(data_to_send.encode())
 
                 if args.verbose:
                     print("SND>" + str(l_count) + ": \"" + l_block + "\"")
 
             # Wait until all responses have been received.
             while l_count > g_count:
-                out_temp = self.s.readline().strip().decode()  # Wait for grbl response
+                out_temp = s.readline().strip().decode()  # Wait for grbl response
 
                 if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
                     print("    MSG: \""+out_temp+"\"")  # Debug response
@@ -273,9 +272,15 @@ gcode = gcode_load(args.gcode)
 # Convert commands where printing to G1 to indicate printing
 # gcode = g0_g1_conversion(gcode)
 
+# Connect grbl
+s = grbl().connect()
+
+# Send grbl settings
+grbl().send_settings()
+
 is_run = True  # Turns on monitoring
 grbl().send(gcode)
 is_run = False  # Turns off monitoring
 
 # Close serial port
-grbl().s.close()
+s.close()
