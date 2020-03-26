@@ -12,6 +12,7 @@ import serial
 import time
 import re
 import threading
+import logging
 
 
 def get_args():
@@ -30,6 +31,8 @@ def get_args():
         default='grbl-1.1h/ttyGRBL')
     parser.add_argument('-v', '--verbose',
                         help='Show verbose information', action='store_true')
+    parser.add_argument('-d', '--debug',
+                        help='Show debug information', action='store_true')
     parser.add_argument(
         '-c', '--check', help='Check GCODE only, do not run', action='store_true')
 
@@ -51,7 +54,7 @@ class websocket:
         async def listen(websocket, path):
             while True:
                 message = await websocket.recv()
-                print(f'< {message}')
+                log.debug(f'WEBSOCKET > {message}')
 
         asyncio.set_event_loop(asyncio.new_event_loop())
         server = websockets.serve(listen, 'localhost', 8765)
@@ -140,8 +143,7 @@ class grbl:
         pass
 
     def connect(self):
-        if args.verbose:
-            print("Connecting to printer...")
+        log.info("Connecting to printer...")
         try:
             # Connect to serial
             s = serial.Serial(args.port, 115200)
@@ -149,16 +151,15 @@ class grbl:
             time.sleep(2)  # Wait for grbl to initialize
             s.flushInput()  # Flush startup text in serial input
 
-        except Exception as e:
-            print("ERROR: UNABLE TO CONNECT TO PRINTER!")
-            print("MSG: %s" % e)
+        except Exception:
+            log.error("Unable to connect to printer", exc_info=True)
             quit()
 
         return s
 
     def send_settings(self):
-        if args.verbose:
-            print("Checking if firmware settings need updating...")
+        log.info("Checking if firmware settings need updating...")
+        log.debug("GRBL < $$")
 
         s.write("$$".encode())
         s.write("\n".encode())
@@ -179,10 +180,11 @@ class grbl:
 
     def home(self):
         s.write('$H\n'.encode())
+        log.debug("GRBL < $H")
 
     def send_status_query(self):
-        if args.verbose:
-            print("Sending status query...")
+        log.debug("Sending status query...")
+        log.debug("GRBL < ?")
         s.write('?'.encode())
 
     def periodic_timer(self):
@@ -198,18 +200,18 @@ class grbl:
             timerThread.start()
 
     def check_mode(self):
-        print('Enabling Grbl Check-Mode: SND: [$C]', end=' ')
+        log.debug('Enabling grbl check-mode...')
+        log.debug("GRBL < $C")
         s.write('$C\n')
 
         while True:
             grbl_out = s.readline().strip()  # Wait for grbl response with carriage return
             if grbl_out.find('error') >= 0:
-                print("REC:", grbl_out)
-                print("  Failed to set Grbl check-mode. Aborting...")
+                log.debug(f"GRBL > {grbl_out}")
+                log.error("Failed to set Grbl check-mode. Aborting...")
                 quit()
             elif grbl_out.find('ok') >= 0:
-                if args.verbose:
-                    print('REC:', grbl_out)
+                log.debug(f'GRBL > {grbl_out}')
                 break
 
     def send(self, data, settings_mode=False):
@@ -220,15 +222,13 @@ class grbl:
             # Send settings file via simple call-response streaming method. Settings must be streamed
             # in this manner since the EEPROM accessing cycles shut-off the serial interrupt.
 
-            if args.verbose:
-                print("SETTINGS MODE")
+            log.debug("Settings mode")
 
             for line in data:
                 l_count += 1  # Iterate the line counter
                 l_block = line.strip()  # Strip all EOL characters for consistency
 
-                if args.verbose:
-                    print("SND>"+str(l_count)+": \"" + l_block + "\"")
+                log.debug("GRBL < "+str(l_count)+": \"" + l_block + "\"")
 
                 # Send g-code block to grbl
                 s.write((l_block + '\n').encode())
@@ -238,24 +238,26 @@ class grbl:
                     grbl_out = s.readline().strip().decode()
 
                     if grbl_out.find('ok') >= 0:
-                        if args.verbose:
-                            print("  REC<"+str(l_count)+": \""+grbl_out+"\"")
+
+                        log.debug("GRBL > "+str(l_count)+": \""+grbl_out+"\"")
                         break
 
                     elif grbl_out.find('error') >= 0:
-                        if args.verbose:
-                            print("  REC<"+str(l_count)+": \""+grbl_out+"\"")
+
+                        log.warning("GRBL > "+str(l_count) +
+                                    ": \""+grbl_out+"\"")
                         error_count += 1
                         break
 
                     else:
-                        print("    MSG: \"" + grbl_out + "\"")
+                        log.debug("GRBL > \"" + grbl_out + "\"")
         else:
             # Send g-code program via a more agressive streaming protocol that forces characters into
             # Grbl's serial read buffer to ensure Grbl has immediate access to the next g-code command
             # rather than wait for the call-response serial protocol to finish. This is done by careful
             # counting of the number of characters sent by the streamer to Grbl and tracking Grbl's
             # responses, such that we never overflow Grbl's serial read buffer.
+            log.debug("Stream mode")
             g_count = 0
             c_line = []
             for line in data:
@@ -272,7 +274,7 @@ class grbl:
                     out_temp = s.readline().strip().decode()  # Wait for grbl response
 
                     if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
-                        print("    MSG: \""+out_temp+"\"")  # Debug response
+                        log.debug("GRBL > \""+out_temp+"\"")  # Debug response
 
                     else:
                         if out_temp.find('error') >= 0:
@@ -280,8 +282,7 @@ class grbl:
 
                         g_count += 1  # Iterate g-code counter
 
-                        if args.verbose:
-                            print("  REC<"+str(g_count)+": \""+out_temp+"\"")
+                        log.debug("GRBL > "+str(g_count)+": \""+out_temp+"\"")
 
                         # Delete the block character count corresponding to the last 'ok'
                         del c_line[0]
@@ -291,15 +292,15 @@ class grbl:
                 # Send g-code block to grbl
                 s.write(data_to_send.encode())
 
-                if args.verbose:
-                    print("SND>" + str(l_count) + ": \"" + l_block + "\"")
+                log.debug("GRBL < " + str(l_count) +
+                          ": \"" + l_block + "\"")
 
             # Wait until all responses have been received.
             while l_count > g_count:
                 out_temp = s.readline().strip().decode()  # Wait for grbl response
 
                 if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
-                    print("    MSG: \""+out_temp+"\"")  # Debug response
+                    log.debug("GRBL > \""+out_temp+"\"")  # Debug response
 
                 else:
                     if out_temp.find('error') >= 0:
@@ -307,29 +308,41 @@ class grbl:
 
                     g_count += 1  # Iterate g-code counter
 
-                    if args.verbose:
-                        print("  REC<"+str(g_count)+": \""+out_temp + "\"")
+                    log.debug("GRBL > "+str(g_count) +
+                              ": \""+out_temp + "\"")
 
                     # Delete the block character count corresponding to the last 'ok'
                     del c_line[0]
 
         end_time = time.time()
-        print(" Time elapsed: ", end_time-start_time, "\n")
+        log.info("Time elapsed: " + end_time-start_time + "\n")
 
         if args.check:
             if error_count > 0:
-                print("CHECK FAILED:", error_count,
-                      "errors found! See output for details.\n")
+                log.error(
+                    f"Check failed: {error_count} errors found! See output for details.\n")
                 quit()
             else:
-                print("CHECK PASSED: No errors found in g-code program.\n")
+                log.info("Check passed: No errors found in g-code program.\n")
         else:
-            print(
-                "WARNING: Wait until Grbl completes buffered g-code blocks before exiting.")
+            log.info(
+                "Wait until Grbl completes buffered g-code blocks before exiting.")
 
 
 # Get input arguments
 args = get_args()
+log = logging.getLogger("logger")
+
+if args.debug:
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(name)-12s: %(levelname)-8s %(message)s')
+elif args.verbose:
+    logging.basicConfig(level=logging.INFO,
+                        format='%(name)-12s: %(levelname)-8s %(message)s')
+else:
+    logging.basicConfig(level=logging.WARNING,
+                        format='%(name)-12s: %(levelname)-8s %(message)s')
+
 
 # --- SETTINGS ---
 
