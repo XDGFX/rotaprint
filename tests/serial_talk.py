@@ -14,7 +14,8 @@ def gcode_send(data):
     print(grbl_out)
 
 
-com = os.path.join(os.getcwd(), 'grbl-1.1h/ttyGRBL')
+# com = os.path.join(os.getcwd(), 'grbl-1.1h/ttyGRBL')
+com = os.path.join(os.getcwd(), '/dev/ttyS3')
 
 # Open grbl serial port
 s = serial.Serial(com, 115200)

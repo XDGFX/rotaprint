@@ -11,6 +11,7 @@ Written by Callum Morrison <callum.morrison@mac.com>, 2020
 import serial
 import time
 import re
+import threading
 
 
 def get_args():
@@ -25,13 +26,38 @@ def get_args():
     parser.add_argument('radius', type=float,
                         help='Radius of part to print on')
     parser.add_argument(
-        '-c', '--com', type=str, help='Serial port to connect to. See: bit.ly/2U8aFvV',
+        '-p', '--port', type=str, help='Serial port to connect to. See: bit.ly/2U8aFvV',
         default='grbl-1.1h/ttyGRBL')
     parser.add_argument('-v', '--verbose',
-                        help='Show verbose information', action="store_true")
+                        help='Show verbose information', action='store_true')
+    parser.add_argument(
+        '-c', '--check', help='Check GCODE only, do not run', action='store_true')
 
     args = parser.parse_args()
     return args
+
+
+class websocket:
+    def __init__(self):
+        # Create thread to run websocket.listen as a daemon (in background)
+        timerThread = threading.Thread(target=self.listen)
+        timerThread.daemon = True
+        timerThread.start()
+
+    def listen(self):
+        import asyncio
+        import websockets
+
+        async def listen(websocket, path):
+            while True:
+                message = await websocket.recv()
+                print(f'< {message}')
+
+        asyncio.set_event_loop(asyncio.new_event_loop())
+        server = websockets.serve(listen, 'localhost', 8765)
+
+        asyncio.get_event_loop().run_until_complete(server)
+        asyncio.get_event_loop().run_forever()
 
 
 def gcode_load(path):
@@ -69,7 +95,7 @@ class grbl:
 
     # GRBL settings (see: https://github.com/gnea/grbl/wiki/Grbl-v1.1-Configuration)
     settings = {
-        "$0": 10,       # Len$th of step pulse, microseconds
+        "$0": 10,       # Length of step pulse, microseconds
         "$1": 255,      # Step idle delay, milliseconds
         # "$2": 0,        # Step port invert, mask
         "$3": 0,        # Direction port invert, mask
@@ -82,12 +108,12 @@ class grbl:
         # "$13": 0,       # Report inches, boolean
         "$20": 0,       # Soft limits, boolean !!! Should be enabled for real use
         # "$21": 0,       # Hard limits, boolean
-        "$22": 1,       # Homin$ cycle, boolean
-        "$23": 0,       # Homin$ dir invert, mask
-        "$24": 25,      # Homin$ feed, mm/min
-        "$25": 500,     # Homin$ seek, mm/min
-        "$26": 25,      # Homin$ debounce, milliseconds
-        # "$27": 1,       # Homin$ pull-off, mm
+        "$22": 1,       # Homing cycle, boolean
+        "$23": 0,       # Homing dir invert, mask
+        "$24": 25,      # Homing feed, mm/min
+        "$25": 500,     # Homing seek, mm/min
+        "$26": 25,      # Homing debounce, milliseconds
+        # "$27": 1,       # Homing pull-off, mm
         # "$30": 1000,    # Max spindle speed, RPM
         # "$31": 0,       # Min spindle speed, RPM
         "$32": 1,       # Laser mode, boolean
@@ -106,40 +132,85 @@ class grbl:
         "$132": 200  # Z Max travel, mm
     }
 
+    startup = {
+        "$N0": ""  # GCODE to run on every startup of grbl
+    }
+
     def __init__(self):
         pass
 
     def connect(self):
-        # Connect to serial
-        s = serial.Serial(args.com, 115200)
-
         if args.verbose:
             print("Connecting to printer...")
+        try:
+            # Connect to serial
+            s = serial.Serial(args.port, 115200)
+            s.write("\r\n\r\n".encode())  # Wake up grbl
+            time.sleep(2)  # Wait for grbl to initialize
+            s.flushInput()  # Flush startup text in serial input
 
-        s.write("\r\n\r\n".encode())  # Wake up grbl
-        time.sleep(2)  # Wait for grbl to initialize
-        s.flushInput()  # Flush startup text in serial input
+        except Exception as e:
+            print("ERROR: UNABLE TO CONNECT TO PRINTER!")
+            print("MSG: %s" % e)
+            quit()
 
         return s
 
     def send_settings(self):
         if args.verbose:
-            print("Sending settings to firmware...")
+            print("Checking if firmware settings need updating...")
 
-        temp_settings = list()
+        s.write("$$".encode())
+        s.write("\n".encode())
+        s.write("\n".encode())
 
-        for key in self.settings:
-            temp_settings.append(key + "=" + str(self.settings[key]))
+        # while True:
+        #     print(s.readline().strip().decode())
 
-        self.send(temp_settings, True)
+        # if args.verbose:
+        #     print("Sending settings to firmware...")
+
+        # temp_settings = list()
+
+        # for key in self.settings:
+        #     temp_settings.append(key + "=" + str(self.settings[key]))
+
+        # self.send(temp_settings, True)
+
+    def home(self):
+        s.write('$H\n'.encode())
 
     def send_status_query(self):
+        if args.verbose:
+            print("Sending status query...")
         s.write('?'.encode())
 
     def periodic_timer(self):
-        while is_run:
-            self.send_status_query()
+        while True:
+            if is_run:
+                self.send_status_query()
             time.sleep(report_interval)
+
+    def monitor(self):
+        if enable_status_reports:
+            timerThread = threading.Thread(target=self.periodic_timer)
+            timerThread.daemon = True
+            timerThread.start()
+
+    def check_mode(self):
+        print('Enabling Grbl Check-Mode: SND: [$C]', end=' ')
+        s.write('$C\n')
+
+        while True:
+            grbl_out = s.readline().strip()  # Wait for grbl response with carriage return
+            if grbl_out.find('error') >= 0:
+                print("REC:", grbl_out)
+                print("  Failed to set Grbl check-mode. Aborting...")
+                quit()
+            elif grbl_out.find('ok') >= 0:
+                if args.verbose:
+                    print('REC:', grbl_out)
+                break
 
     def send(self, data, settings_mode=False):
         l_count = 0
@@ -148,9 +219,11 @@ class grbl:
         if settings_mode:
             # Send settings file via simple call-response streaming method. Settings must be streamed
             # in this manner since the EEPROM accessing cycles shut-off the serial interrupt.
-            print("SETTINGS MODE")
-            for line in data:
 
+            if args.verbose:
+                print("SETTINGS MODE")
+
+            for line in data:
                 l_count += 1  # Iterate the line counter
                 l_block = line.strip()  # Strip all EOL characters for consistency
 
@@ -243,10 +316,11 @@ class grbl:
         end_time = time.time()
         print(" Time elapsed: ", end_time-start_time, "\n")
 
-        if check_mode:
+        if args.check:
             if error_count > 0:
                 print("CHECK FAILED:", error_count,
                       "errors found! See output for details.\n")
+                quit()
             else:
                 print("CHECK PASSED: No errors found in g-code program.\n")
         else:
@@ -261,7 +335,6 @@ args = get_args()
 
 # GCODE parser settings
 settings_mode = False  # Default False, must be True for settings
-check_mode = True  # Default True, enables notification on recieved errors
 rx_buffer_size = 128
 enable_status_reports = True  # Default True, can toggle monitoring
 report_interval = 1.0  # In seconds, if enable_status_reports is True
@@ -272,14 +345,30 @@ gcode = gcode_load(args.gcode)
 # Convert commands where printing to G1 to indicate printing
 # gcode = g0_g1_conversion(gcode)
 
+# Assign grbl object to variable
+g = grbl()
+s = websocket()
+
 # Connect grbl
-s = grbl().connect()
+s = g.connect()
 
 # Send grbl settings
-grbl().send_settings()
+# g.send_settings()
 
-is_run = True  # Turns on monitoring
-grbl().send(gcode)
+# # Toggle check mode if activated
+# if args.check:
+#     g.check_mode()  # Enable
+#     g.send(gcode)
+#     g.check_mode()  # Disable
+
+# Homing cycle
+# g.home()
+
+# Turns on monitoring
+is_run = True
+g.monitor()
+
+g.send(gcode)
 is_run = False  # Turns off monitoring
 
 # Close serial port

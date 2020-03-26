@@ -4,3 +4,16 @@ __pycache__/
 grbl-1.1h/block.out
 grbl-1.1h/step.out
 grbl-1.1h/ttyGRBL
+
+*.pyc
+tests/__pycache__/
+
+instance/
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+dist/
+build/
+*.egg-info/
