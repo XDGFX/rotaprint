@@ -16,6 +16,7 @@ import logging
 
 
 def get_args():
+    # Setup argument parser
     import argparse
 
     desc = "Print on cylindrical components!"
@@ -41,6 +42,7 @@ def get_args():
 
 
 class websocket:
+    # Class for interacting with front end GUI over websocket (to receive data)
     def __init__(self):
         # Create thread to run websocket.listen as a daemon (in background)
         timerThread = threading.Thread(target=self.listen)
@@ -48,6 +50,7 @@ class websocket:
         timerThread.start()
 
     def listen(self):
+        # Listen always for messages over websocket
         import asyncio
         import websockets
 
@@ -64,18 +67,19 @@ class websocket:
 
 
 def gcode_load(path):
-    gcode = list()  # Initiate gcode variable
+    # Load supplied GCODE file into list
+    gcode = list()
 
-    # Load file and convert lines to list variable
     with open(path, "r") as f:
         for line in f:
-            if not line.strip() == "":  # Remove blank lines completely
+            # Remove blank lines completely
+            if not line.strip() == "":
                 gcode.append(line.strip())
-
     return gcode
 
 
 def g0_g1_conversion(gcode):
+    # Convert all GCODE where printing (indicated by a feedrate change command) to G1
     printing = 0
 
     for idx, command in enumerate(gcode):
@@ -86,6 +90,7 @@ def g0_g1_conversion(gcode):
             # End of printing
             printing = 0
 
+        # Replace [G]0 with [G]1 on current line
         if printing:
             gcode[idx] = command[:1] + "1" + command[2:]  # Replace G0 with G1
     return gcode
@@ -93,10 +98,11 @@ def g0_g1_conversion(gcode):
 
 class grbl:
     """
-    Full control and configuration of grbl firmware and connection.
+    Object for control and configuration of grbl firmware and connection.
     """
 
     # GRBL settings (see: https://github.com/gnea/grbl/wiki/Grbl-v1.1-Configuration)
+    # Unimportant settings are commented out, program will only update altered settings
     settings = {
         "$0": 10,       # Length of step pulse, microseconds
         "$1": 255,      # Step idle delay, milliseconds
@@ -122,25 +128,22 @@ class grbl:
         "$32": 1,       # Laser mode, boolean
         # ---
         "$100": 250,    # X steps/mm
-        "$101": 250,    # Y steps/mm  !!!VARIES
+        "$101": 250,    # Y steps/mm  TODO VARIES
         "$102": 250,    # Z steps/mm
         "$110": 500,    # X Max rate, mm/min
-        "$111": 500,    # Y Max rate, mm/min
+        "$111": 500,    # Y Max rate, mm/min  TODO VARIES
         "$112": 500,    # Z Max rate, mm/min
         "$120": 10,     # X Acceleration, mm/sec^2
         "$121": 10,     # Y Acceleration, mm/sec^2
         "$122": 10,     # Z Acceleration, mm/sec^2
-        "$130": 200,    # X Max travel, mm  !!!VARIES
-        "$131": 200,    # Y Max travel, mm  !!!VARIES
+        "$130": 200,    # X Max travel, mm  TODO VARIES
+        "$131": 200,    # Y Max travel, mm  TODO VARIES
         "$132": 200  # Z Max travel, mm
     }
 
     startup = {
-        "$N0": ""  # GCODE to run on every startup of grbl
+        "$N0": ""  # GCODE to run on every startup of grbl  TODO
     }
-
-    def __init__(self):
-        pass
 
     def connect(self):
         log.info("Connecting to printer...")
@@ -158,31 +161,75 @@ class grbl:
         return s
 
     def send_settings(self):
+        # Create correct format list of current settings
+        temp_settings = list()
+        for key in self.settings:
+            temp_settings.append(key + "=" + str(self.settings[key]))
+
         log.info("Checking if firmware settings need updating...")
         log.debug("GRBL < $$")
-
         s.write("$$".encode())
-        s.write("\n".encode())
-        s.write("\n".encode())
 
-        # while True:
-        #     print(s.readline().strip().decode())
+        # In testing, GRBL would often take several lines to start responding,
+        # this should flush that so program will not hang
+        for _ in range(1, 10):
+            s.write("\n".encode())
 
-        # if args.verbose:
-        #     print("Sending settings to firmware...")
+        # Wait until current settings are received
+        temp_out = ""
+        i = 0
+        force_settings = False
+        while not temp_out.startswith("$"):
+            temp_out = s.readline().strip().decode()
+            log.debug(f"GRBL > {temp_out}")
 
-        # temp_settings = list()
+            if i >= 10:
+                # No settings were ever received from GRBL, will attempt to force update
+                log.error("Receiving settings timeout...")
+                log.warning("Forcing settings send...")
+                force_settings = True
+            i += i
 
-        # for key in self.settings:
-        #     temp_settings.append(key + "=" + str(self.settings[key]))
+        current_settings = list()
+        if not force_settings:
+            # Read all current settings
+            if temp_out.startswith("$"):
+                while temp_out.startswith("$"):
+                    temp_out = s.readline().strip().decode()
+                    log.debug(f"GRBL > {temp_out}")
 
-        # self.send(temp_settings, True)
+                    current_settings.append(temp_out)
+            else:
+                log.debug(f"GRBL > {temp_out}")
+                log.error("Unexpected data received from GRBL")
+                log.info("All settings will be forced instead")
+                force_settings = True
+
+        # Iterate through received data and find outdated settings
+        send_settings = list()
+        for item in temp_settings:
+            if item not in current_settings:
+                log.debug(f"Out of date setting: {item}")
+                send_settings.append(item)
+
+        # Send new settings if required
+        if len(send_settings) > 0 or force_settings:
+            log.info(f"{len(send_settings)} setting(s) need updating!")
+            log.info("Sending updated settings...")
+            self.send(temp_settings, True)
+
+        self.send(temp_settings, True)  # Startup settings send
 
     def home(self):
-        s.write('$H\n'.encode())
+        # Built-in GRBL homing functionality
+        log.info("Homing machine...")
         log.debug("GRBL < $H")
+        s.write('$H\n'.encode())
 
     def send_status_query(self):
+        # Built in GRBL status report, in format:
+        # <Idle|MPos:0.000,0.000,0.000|FS:0.0,0>
+        # Recommended query frequency no more than 5Hz
         log.debug("Sending status query...")
         log.debug("GRBL < ?")
         s.write('?'.encode())
@@ -200,7 +247,7 @@ class grbl:
             timerThread.start()
 
     def check_mode(self):
-        log.debug('Enabling grbl check-mode...')
+        log.info('Toggling grbl check-mode...')
         log.debug("GRBL < $C")
         s.write('$C\n')
 
@@ -315,7 +362,7 @@ class grbl:
                     del c_line[0]
 
         end_time = time.time()
-        log.info("Time elapsed: " + end_time-start_time + "\n")
+        log.info("Time elapsed: " + str(end_time-start_time) + "\n")
 
         if args.check:
             if error_count > 0:
@@ -331,8 +378,9 @@ class grbl:
 
 # Get input arguments
 args = get_args()
-log = logging.getLogger("logger")
 
+# Set log level
+log = logging.getLogger("logger")
 if args.debug:
     logging.basicConfig(level=logging.DEBUG,
                         format='%(name)-12s: %(levelname)-8s %(message)s')
@@ -360,27 +408,33 @@ gcode = gcode_load(args.gcode)
 
 # Assign grbl object to variable
 g = grbl()
+
+# Start GUI websocket
 s = websocket()
 
 # Connect grbl
 s = g.connect()
 
-# Send grbl settings
-# g.send_settings()
+# Check for out of date grbl settings, and send if needed
+g.send_settings()
 
-# # Toggle check mode if activated
-# if args.check:
-#     g.check_mode()  # Enable
-#     g.send(gcode)
-#     g.check_mode()  # Disable
+# Check supplied GCODE if required
+if args.check:
+    log.info("Check mode enabled")
+    log.info("Running full program check...")
+    g.check_mode()  # Enable
+    g.send(gcode)
+    g.check_mode()  # Disable
 
 # Homing cycle
 # g.home()
 
-# Turns on monitoring
-is_run = True
+is_run = True  # Turns on monitoring
+
+# Set up monitoring thread
 g.monitor()
 
+# Send all supplied GCODE to printer
 g.send(gcode)
 is_run = False  # Turns off monitoring
 

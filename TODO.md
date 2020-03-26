@@ -1,0 +1,4 @@
+- Adapt based on diameter of part
+- Fully implement two way GUI connection
+- Design and program GUI
+- Change Python settings to SQL database (for BDE)
