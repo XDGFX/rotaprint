@@ -1,4 +1,10 @@
 - Adapt based on diameter of part
+- Create reconnection function incase of timeout (does not return s)
+- Send startup settings to GRBL (or maybe just do this in Python)
 - Fully implement two way GUI connection
 - Design and program GUI
 - Change Python settings to SQL database (for BDE)
+- Implement database backup `connection.backup()` or complete file backup
+- Different logins for different engineers (working on different projects)
+- 3D render view of final part - https://threejs.org/
+- Write machine code language for communication between JS and Python (e.g. DBU database update)

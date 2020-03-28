@@ -4,6 +4,7 @@ __pycache__/
 grbl-1.1h/block.out
 grbl-1.1h/step.out
 grbl-1.1h/ttyGRBL
+rotaprint.db
 
 *.pyc
 tests/__pycache__/
