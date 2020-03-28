@@ -1,9 +1,8 @@
 .venv/
 .vscode/
 __pycache__/
-grbl-1.1h/block.out
-grbl-1.1h/step.out
-grbl-1.1h/ttyGRBL
+grbl-1.1h/*
+!grbl-1.1h/simport.sh
 rotaprint.db
 
 *.pyc
