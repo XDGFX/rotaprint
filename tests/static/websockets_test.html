@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+
+  <title>Websocket test</title>
+  <meta name="description" content="Websocket Test" />
+  <meta name="author" content="Callum Morrison" />
+
+  <!-- <link rel="stylesheet" href="css/styles.css?v=1.0"> -->
+</head>
+
+<body>
+  <script>
+    let socket = new WebSocket("ws://localhost:8765");
+
+    socket.onopen = function (e) {
+      console.log("[open] Connection established");
+    };
+
+    socket.onmessage = function (event) {
+      console.log(`[message] Data received from server: ${event.data}`);
+    };
+
+    socket.onclose = function (event) {
+      if (event.wasClean) {
+        alert(
+          `[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
+        );
+      } else {
+        // e.g. server process killed or network down
+        // event.code is usually 1006 in this case
+        alert("[close] Connection died");
+      }
+    };
+
+    socket.onerror = function (error) {
+      alert(`[error] ${error.message}`);
+    };
+
+    function send_form() {
+      data_ids = ["data1", "data2"]
+
+      for (let idx = 0; idx < data_ids.length; idx++) {
+        data = document.getElementById(data_ids[idx]).value;
+        console.log(data)
+        socket.send(data)
+      }
+    }
+
+    function send_gcode() {
+      var file = document.getElementById('filename').files[0];
+
+      socket.send("GCD")
+      socket.send(file);
+      alert("the File has been transferred.")
+    }
+
+
+  </script>
+
+  <form id="frm1">
+    Data1: <input type="text" name="data1" id="data1"><br>
+    Data2: <input type="text" name="data2" id="data2"><br><br>
+    <input type="button" onclick="send_form()" value="Submit">
+    <input type="file" id="filename" />
+    <input type="button" onclick="send_gcode()" value="Send Gcode">
+  </form>
+</body>
+
+</html>
