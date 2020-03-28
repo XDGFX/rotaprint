@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>rotaprint</title>
+    <link rel="stylesheet" href="css/bulma.css">
+    <link rel="stylesheet" href="css/bulma-extensions.min.css">
+    <link rel="stylesheet" href="css/custom.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script src="js/ws.js"></script>
+    <script src="js/bulma.js"></script>
+</head>
+
+<body>
+
+    <div id="pageloader" class="pageloader is-active">
+        <span class="title">
+            <p id="pageloader_title">
+                Connecting to backend...
+            </p>
+        </span></div>
+
+    <div id=notification_window>
+        <div id="notification_disconnected" class="notification is-danger is-hidden">
+            <!-- <span class="icon is-large">
+                <i class="fas fa-exclamation"></i>
+            </span> -->
+            <span>
+                Backend disconnected. Any further changes may not be applied. Attempt to <a href="">reconnect?</a>
+            </span>
+        </div>
+    </div>
+
+    <section class="section">
+        <div class="container">
+            <h1 class="title">
+                rotaprint
+            </h1>
+            <p class="subtitle">
+                Printer UI <strong>1.0</strong>
+            </p>
+        </div>
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-narrow">
+                    <div class="file has-name is-boxed is-primary">
+                        <label class="file-label">
+                            <input class="file-input" type="file" name="resume">
+                            <span class="file-cta">
+                                <span class="file-icon">
+                                    <i class="fas fa-upload"></i>
+                                </span>
+                                <span class="file-label">
+                                    Choose a file…
+                                </span>
+                            </span>
+                            <span class="file-name">
+                                <p class="is-dim">No file selected...</p>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box">
+                <script>
+                    function show_help(which) {
+                        document.getElementById("modal_check_mode").classList.add('is-active');
+                    }
+
+                    function hide_help(which) {
+                        document.getElementById("modal_check_mode").classList.remove('is-active');
+                    }
+                </script>
+                <input id="switch_check_mode" type="checkbox" class="switch is-rounded">
+                <label for="switch_check_mode">Check mode</label>
+                <a onclick="show_help()">?</a>
+                <input class=" input" type="text" id="custom_command" onkeydown="return send_custom_code(event)"
+                    placeholder="Custom command"><br>
+            </div>
+
+
+        </div>
+
+        <div class=" modal" id="modal_check_mode">
+            <div class="modal-background" onclick="hide_help()"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title"><b>Help:</b> Check Mode</p>
+                    <button class="delete" onclick="hide_help()"></button>
+                </header>
+                <section class="modal-card-body">
+                    <strong>Check mode</strong> is used to verify GCODE files are accepted by the printer,
+                    before actual
+                    printing occurs. By enabling <b>check mode</b> the GCODE will be streamed to the printer as
+                    normal,
+                    but no movement will occur. <br><br>
+                    An output log will be presented once complete (will take as long as a normal print), for
+                    checking
+                    and verification. If you are happy with the output, disable check mode for real printing.
+                </section>
+            </div>
+        </div>
+
+
+        <!-- <div class="columns">
+            <div class="column">
+                <button class="button is-centered">Print</button>
+                <button class="button is-centered">Select File</button>
+            </div>
+        </div> -->
+
+
+    </section>
+</body>
+
+</html>
