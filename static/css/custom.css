@@ -1,0 +1,48 @@
+html {
+	scroll-behavior: smooth
+}
+
+/* Used to display X if page does not load */
+.pageloader.is-stopped::after{
+    display: inline-block;
+    content: "\00d7";
+    color: white;
+    scale: 5;
+    top:50%;
+    left:50%;
+    -webkit-transform:translate(-50%,-50%);
+    transform:translate(-50%,-50%);
+    width: 0.4em;
+    height: 1em;
+    -webkit-animation:loader-figure 0s infinite cubic-bezier(.215,.61,.355,1);
+    animation:loader-figure 0s infinite cubic-bezier(.215,.61,.355,1)
+}
+
+/* Used to configure overlay screens */
+.overlay {
+  height: 100%;
+  width: 100%;
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  overflow-x: hidden; /* Disable horizontal scroll */
+}
+
+/* Sticky for menu contents */
+.sticky	{
+    position: sticky;
+    top: 5em;
+}
+
+/* Removes arrows from number input box */
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}

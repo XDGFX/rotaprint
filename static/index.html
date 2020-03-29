@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>rotaprint</title>
+    <link rel="stylesheet" href="static/css/bulma.css">
+    <link rel="stylesheet" href="static/css/bulma-extensions.css">
+    <link rel="stylesheet" href="static/css/custom.css">
+    <link rel="stylesheet" href="static/css/animate.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script src="static/js/ws.js"></script>
+    <script src="static/js/help.js"></script>
+    <script defer src="static/js/main.js"></script>
+    <script src="static/js/bulma-toast.min.js"></script>
+    <script src="static/js/bulma.js"></script>
+</head>
+
+<body>
+    <!-- OVERLAYS -->
+    <div id="pageloader" class="pageloader is-active">
+        <span class="title">
+            <p id="pageloader_title">
+                Connecting to backend...
+            </p>
+        </span></div>
+
+
+    <!-- MAIN SECTION -->
+    <section class="section">
+        <nav class="level container">
+            <!-- Level left -->
+            <div class="level-left">
+                <div class="container">
+                    <p class="title">rotaprint</p>
+                    <p class="subtitle">Printer UI <b>1.0</b></p>
+                </div>
+            </div>
+
+            <!-- Level right -->
+            <div class="level-right">
+                <div class="container">
+                    <button onclick="show_settings()" class="button">
+                        <span class="icon">
+                            <i class="fas fa-cogs"></i>
+                        </span>
+                        <span>Settings</span>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- FILE UPLOAD -->
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-narrow">
+                    <div id="gcode_uploader" class="file has-name is-boxed is-primary">
+                        <label class="file-label">
+                            <input class="file-input" type="file" name="resume">
+                            <span class="file-cta">
+                                <span class="file-icon">
+                                    <i class="fas fa-upload"></i>
+                                </span>
+                                <span class="file-label">
+                                    Choose a file…
+                                </span>
+                            </span>
+                            <span class="file-name" style="width:16em;">
+                                <p class="has-text-grey-lighter">No file selected...</p>
+                            </span>
+
+                            <script>
+                                const fileInput = document.querySelector('#gcode_uploader input[type=file]');
+                                fileInput.onchange = () => {
+                                    if (fileInput.files.length > 0) {
+                                        send_gcode(fileInput)
+                                    }
+                                }
+                            </script>
+
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PRIMARY SETTINGS -->
+            <div class="box">
+                <input id="switch_check_mode" type="checkbox" class="switch is-rounded">
+                <label for="switch_check_mode">Check mode</label>
+                <a onclick="show_help()">?</a>
+                <input class=" input" type="text" id="custom_command" onkeydown="return send_custom_code(event)"
+                    placeholder="Custom command"><br>
+            </div>
+
+            <!-- ADVANCED SETTINGS -->
+
+
+        </div>
+
+        <div class=" modal" id="modal_check_mode">
+            <div class="modal-background" onclick="hide_help()"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title"><b>Help:</b> Check Mode</p>
+                    <button class="delete" onclick="hide_help()"></button>
+                </header>
+                <section class="modal-card-body">
+                    <strong>Check mode</strong> is used to verify GCODE files are accepted by the printer,
+                    before actual
+                    printing occurs. By enabling <b>check mode</b> the GCODE will be streamed to the printer as
+                    normal,
+                    but no movement will occur. <br><br>
+                    An output log will be presented once complete (will take as long as a normal print), for
+                    checking
+                    and verification. If you are happy with the output, disable check mode for real printing.
+                </section>
+            </div>
+        </div>
+
+
+        <!-- <div class="columns">
+            <div class="column">
+                <button class="button is-centered">Print</button>
+                <button class="button is-centered">Select File</button>
+            </div>
+        </div> -->
+
+
+    </section>
+
+
+    <!-- MACHINE SETTINGS -->
+    <section id="machine_settings" class="section overlay is-hidden has-background-white-bis">
+
+        <a onclick="hide_settings()" class=" is-pulled-right delete"></a>
+
+
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-one-quarter">
+                    <div class="menu sticky">
+                        <p class="menu-label"><b>General</b></p>
+                        <ul id="menu" class="menu-list">
+                            <li><a class="menu_button" href="#settings_connection">Printer Connection</a></li>
+                            <li><a class="menu_button" href="#settings_defaults">Default Settings</a></li>
+                            <li><a class="menu_button" href="#settings_controller">Controller Settings</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <h1 class="title has-text-centered">machine settings</h1>
+
+                    <div class="field">
+                        <br>
+                        <h2 id="settings_connection" class="heading">Printer Connection</h2>
+                        <br>
+                        <label class="label">Communication Port</label>
+                        <div class="field">
+                            <p class="control has-icons-left">
+                                <input id="setting_port" class="input" type="text">
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-code"></i>
+                                </span>
+                            </p>
+                            <p class="help">This is the serial port used to communicate with the printer. It is
+                                often in
+                                the form
+                                <code>/dev/ttyUSB#</code> on Linux and <code>COM#</code> on Windows.
+                                It can be found through the Arduino IDE or device managers.
+                            </p>
+                        </div>
+
+                        <br>
+                        <h2 id="settings_defaults" class="heading">Default Settings</h2>
+                        <br>
+                        <div class="field">
+                            <label class="label">Part Length</label>
+                            <div class="field has-addons" style="margin: 0;">
+                                <p class="control">
+                                    <input id="setting_length" class="input" type="number" style="width: 100px;"
+                                        oninput="check_changed(this)">
+                                </p>
+                                <p class="control">
+                                    <a class="button is-static" style="width: 60px;">mm</a>
+                                </p>
+                            </div>
+                            <p class="help">Default length (X direction) of part</p>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Part Radius</label>
+                            <div class="field has-addons" style="margin: 0;">
+                                <p class="control">
+                                    <input id="setting_radius" class="input" type="number" style="width: 100px;"
+                                        oninput="check_changed(this)">
+                                </p>
+                                <p class="control">
+                                    <a class="button is-static" style="width: 60px;">mm</a>
+                                </p>
+                            </div>
+                            <p class="help">Default radius (Y direction) of part</p>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Batch Size</label>
+                            <div class="field has-addons" style="margin: 0;">
+                                <p class="control">
+                                    <input id="setting_batch" class="input" type="number" style="width: 160px;"
+                                        oninput="check_changed(this)">
+                                </p>
+                            </div>
+                            <p class="help">Default batch size (maximum 5)</p>
+                        </div>
+
+                        <br>
+                        <h2 id="settings_controller" class="heading">Controller Settings</h2>
+                        <br>
+                        <div class="field">
+                            <label class="label">Length of Step Pulse</label>
+                            <div class="columns" style="margin: 0;">
+                                <div class="column" style="padding: 0;">
+                                    <div class="field has-addons" style="margin: 0;">
+                                        <p class="control">
+                                            <input id="setting_$0" class="input" type="number" style="width: 100px;"
+                                                oninput="check_changed(this)">
+                                        </p>
+                                        <p class="control">
+                                            <a class="button is-static" style="width: 60px;">μs</a>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="column" style="padding: 0;">
+                                    <p class="control">
+                                        <a onclick="set_default('setting_$0')"
+                                            class="button is-pulled-right">Default</a>
+                                    </p>
+                                </div>
+                            </div>
+                            <p class="help">Length of pulse sent to stepper motors. You want the pulses as short as the
+                                drivers can reliably recognise. If the pulses are too long, overlap between pulses can
+                                cause
+                                issues at high speeds.</p>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Step Idle Delay</label>
+                            <div class="columns" style="margin: 0;">
+                                <div class="column" style="padding: 0;">
+                                    <div class="field has-addons" style="margin: 0;">
+                                        <p class="control">
+                                            <input id="setting_$1" class="input" type="number" style="width: 100px;"
+                                                oninput="check_changed(this)">
+                                        </p>
+                                        <p class="control">
+                                            <a class="button is-static" style="width: 60px;">ms</a>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="column" style="padding: 0;">
+                                    <p class="control">
+                                        <a onclick="set_default('setting_$1')"
+                                            class="button is-pulled-right">Default</a>
+                                    </p>
+                                </div>
+                            </div>
+                            <p class="help">Every time the printer completes a motion and comes to a stop, the stepper
+                                motors will be disabled after this delay. Lower values may help account for motors which
+                                do not like to be left on for long periods of time without doing anything.
+                                Alternatively, set to the maximum value of 255 to never disable stepper motors.</p>
+                        </div>
+
+
+
+                    </div>
+                </div>
+            </div>
+    </section>
+
+</body>
+
+</html>
