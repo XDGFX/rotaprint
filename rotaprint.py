@@ -8,6 +8,7 @@ Proprietary and confidential
 Written by Callum Morrison <callum.morrison@mac.com>, 2020
 """
 
+import socketserver
 import serial
 import time
 import re
@@ -46,7 +47,10 @@ def get_args():
 def setup_log():
     # Set log level
     log = logging.getLogger("logger")
+
+    # Decrease output of external modules
     logging.getLogger("websockets").setLevel(logging.WARNING)
+    logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG,
@@ -81,6 +85,28 @@ def g0_g1_conversion(gcode):
 
 def br():
     log.info("------")
+
+
+class webserver:
+    def start(self):
+        logging.info("Initialising webserver")
+        # Create thread to run webserver.run as a daemon (in background)
+        webserverThread = threading.Thread(target=self.run)
+        webserverThread.daemon = True
+        webserverThread.start()
+        logging.info("Webserver initialised")
+        logging.info("Accessible at http://localhost:5000")
+
+    def run(self):
+        import http.server
+        os.chdir("static")
+
+        PORT = 8080
+        Handler = http.server.SimpleHTTPRequestHandler
+
+        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+            print("serving at port", PORT)
+            httpd.serve_forever()
 
 
 class database:
@@ -134,10 +160,6 @@ class database:
         ("batch", 5),
         ("check", False),
 
-    ]
-
-    other_settings = [
-        ("port", "/dev/ttyUSB1")
     ]
 
     def connect(self):
@@ -286,9 +308,21 @@ class websocket:
                 br()
 
         def fetch_settings(self):
+            # Return all database settings in JSON format
             from json import dumps
             current_settings = db.get_settings()
             return dumps(current_settings)
+
+        def fetch_value(self, data):
+            # Get current value of variable
+            variable = {
+                "connected": connected,
+            }
+            return str(variable[data])
+
+        def reconnect_printer(self):
+            g.reconnect()
+            return "done"
 
         switcher = {
             "EST": emergency_stop,
@@ -302,6 +336,8 @@ class websocket:
             "GRB": send_manual,
             "PRN": print_now,
             "FTS": fetch_settings,
+            "RQV": fetch_value,
+            "RCN": reconnect_printer,
         }
 
         for item in message:
@@ -311,8 +347,8 @@ class websocket:
             # Execute command
             if len(item) == 2:
                 # Message has data
-                output = str(switcher[item[0]]) + "~" + \
-                    switcher[item[0]](self, item[1])
+                output = switcher[item[0]](self, item[1])
+                output = item[0] + "~" + output
                 return output
             elif item[0] == "":
                 # Blank message
@@ -320,7 +356,7 @@ class websocket:
             elif len(item) == 1:
                 # Message has no data
                 output = switcher[item[0]](self)
-                output = item[0] + "~" + switcher[item[0]](self)
+                output = output = item[0] + "~" + output
                 return output
 
 
@@ -376,17 +412,28 @@ class grbl:
     def __init__(self):
         # Get GRBL settings
         self.settings = db.get_settings()
+        self.port = self.settings["port"]
         self.settings = {x: self.settings[x]
                          for x in self.settings if x.find("$") >= 0}
 
+    def reconnect(self):
+        global s
+        global connected
+
+        if s != "":
+            s.close()
+            connected = False
+        self.connect()
+
     def connect(self):
         global s
+        global connected
         log.info("Connecting to printer...")
         try:
             # Connect to serial
-            log.debug(f"Connecting on port {args.port}...")
-            s = serial.Serial(args.port, 115200, timeout=1)
-            log.debug("Connection success!")
+            log.info(f"Connecting on port {self.port}...")
+            s = serial.Serial(self.port, 115200, timeout=1)
+            log.info("Connection success!")
 
             # Wake up grbl
             log.debug("GRBL < \"\\r\\n\\r\\n\"")
@@ -397,12 +444,10 @@ class grbl:
                 self.clear_lockout()
             time.sleep(2)  # Wait for grbl to initialize
             s.flushInput()  # Flush startup text in serial input
+            connected = True
 
         except Exception:
             log.error("Unable to connect to printer", exc_info=True)
-            quit()
-
-        return s
 
     def clear_lockout(self):
         log.warning("Lockout error detected! Overriding...")
@@ -431,8 +476,7 @@ class grbl:
                 log.error("Printer communication timeout while reading settings")
                 log.info("Will reconnect in an attempt to fix")
                 log.debug("Disconnecting...")
-                s.close()
-                self.connect()
+                self.reconnect()
                 log.warning(
                     "Attempting to continue by forcing settings update")
                 force_settings = True
@@ -672,6 +716,9 @@ rx_buffer_size = 128
 enable_status_reports = True  # Default True, can toggle monitoring
 report_interval = 1.0  # In seconds, if enable_status_reports is True
 gcode = ""
+s = ""
+g = ""
+connected = False  # Check whether backend is successfully connected to printer
 
 
 # Load selected gcode file into list
@@ -691,18 +738,23 @@ w = websocket()
 w.connect()
 br()
 
-# Connect grbl
-g = grbl()
-s = g.connect()
+# Start webserver
+webserver().start()
 br()
 
-# Set up monitoring thread
-g.monitor()
+# # Connect grbl
+g = grbl()  # GRBL object
+g.connect()  # Serial connection
 br()
 
-# Check for out of date grbl settings, and send if needed
-g.send_settings()
-br()
+# if connected:
+#     # Set up monitoring thread
+#     g.monitor()
+#     br()
+
+#     # Check for out of date grbl settings, and send if needed
+#     g.send_settings()
+#     br()
 
 # Check supplied GCODE if required
 # if args.check:

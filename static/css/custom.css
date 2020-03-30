@@ -46,3 +46,41 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+
+/* Remove switch outline after toggling */
+.switch[type=checkbox]:focus+label::after,.switch[type=checkbox]:focus+label::before,.switch[type=checkbox]:focus+label:after,.switch[type=checkbox]:focus+label:before{
+    outline:0px;
+}
+
+/* Fix switch vertical position */
+.switch[type=checkbox]+label::before,.switch[type=checkbox]+label:before{
+    top:0.1rem;
+}
+
+.switch[type=checkbox]+label::after,.switch[type=checkbox]+label:after{
+    top:0.35rem;
+}
+
+.modal-card-title {
+  font-weight: bold;
+}
+
+.modal-card-head {
+  background-color: white;
+}
+
+/* For use on horizontal sliders */
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  padding-left: 0.3em;
+  padding-right: 0.3em;
+  top: -1em;
+  position: relative;
+  margin-bottom: -1em;
+}
+
+/* Increase spacing in settings */
+.field:not(:last-child) {
+  margin-bottom: 2rem
+}

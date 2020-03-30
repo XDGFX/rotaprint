@@ -1,27 +1,26 @@
 var defaults = {
     "$0": 10, // Length of step pulse, microseconds
     "$1": 255, // Step idle delay, milliseconds
-    // "$2": 0, // Step port invert, mask
+    "$2": 0, // Step port invert, mask
     "$3": 0, // Direction port invert, mask
     "$4": 0, // Step enable invert, boolean
     "$5": 0, // Limit pins invert, boolean
-    // "$6": 0, // Probe pin invert, boolean
+    "$6": 0, // Probe pin invert, boolean
     "$10": 1, // Status report, mask
-    // "$11": 0.010, // Junction deviation, mm
-    // "$12": 0.002, // Arc tolerance, mm
-    // "$13": 0, // Report inches, boolean
+    "$11": 0.010, // Junction deviation, mm
+    "$12": 0.002, // Arc tolerance, mm
+    "$13": 0, // Report inches, boolean
     "$20": 0, // Soft limits, boolean !!! Should be enabled for real use
-    // "$21": 0,       // Hard limits, boolean
+    "$21": 0,       // Hard limits, boolean
     "$22": 1,       // Homing cycle, boolean
     "$23": 0,       // Homing dir invert, mask
     "$24": 25,      // Homing feed, mm / min
     "$25": 500,     // Homing seek, mm / min
     "$26": 25,      // Homing debounce, milliseconds
-    // "$27": 1,       // Homing pull - off, mm
-    // "$30": 1000,    // Max spindle speed, RPM
-    // "$31": 0,       // Min spindle speed, RPM
+    "$27": 1,       // Homing pull - off, mm
+    "$30": 1000,    // Max spindle speed, RPM
+    "$31": 0,       // Min spindle speed, RPM
     "$32": 1,       // Laser mode, boolean
-    //-- -
     "$100": 250,    // X steps / mm
     "$101": 250,    // Y steps / mm  TODO VARIES
     "$102": 250,    // Z steps / mm
@@ -53,15 +52,43 @@ function check_changed(element) {
         element.classList.remove("is-warning")
     } else {
         element.classList.add("is-warning")
-
     }
 
+    settings_element = document.getElementById("machine_settings")
 
+    // Remove changed warning icons on all settings
+    changed = document.getElementById("machine_settings").querySelectorAll(".is-warning");
+    button = document.getElementById("settings_apply")
 
-    // for (const key of Object.keys(settings_table)) {
-    //     id = document.getElementById("setting_".concat(key))
-    //     if (id != null) {
-    //         id.value = settings_table[key]
-    //     }
-    // }
+    if (changed.length > 0) {
+        button.disabled = false
+        if (changed.length > 1) {
+            button.innerHTML = "Apply " + changed.length + " Settings"
+        } else {
+            button.innerHTML = "Apply " + changed.length + " Setting"
+        }
+
+    } else {
+        button.disabled = true
+        button.innerHTML = "Apply Settings"
+    }
+
+}
+
+function toggle_advanced_settings() {
+    checked = document.getElementById("switch_advanced_settings").checked
+    advanced = document.getElementById("settings_column").querySelectorAll(".advanced_setting");
+
+    for (var i = 0; i < advanced.length; i++) {
+        advanced[i].disabled = !checked
+    }
+
+    field = document.getElementById("advanced_settings_field")
+    if (checked) {
+        field.classList.remove("has-text-grey-lighter")
+        field.classList.add("has-text-danger")
+    } else {
+        field.classList.add("has-text-grey-lighter")
+        field.classList.remove("has-text-danger")
+    }
 }

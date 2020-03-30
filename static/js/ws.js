@@ -12,6 +12,8 @@ ws.onopen = function (e) {
     setTimeout(() => {
         document.getElementById("pageloader").classList.remove('is-active');
     }, 1000);
+
+    check_connected()
 };
 
 
@@ -25,6 +27,8 @@ ws.onmessage = function (event) {
             send_gcode(response[1])
         case "FTS":
             update_settings(response[1])
+        case "RQV":
+            check_connected(response[1])
         default:
             break;
     }
@@ -80,7 +84,7 @@ function send_gcode(data) {
 
         // Send notification success
         bulmaToast.toast({
-            message: "Backend received GCODE successfully",
+            message: "Backend received GCODE successfully!",
             type: "is-success",
             position: "bottom-right",
             dismissible: true,
@@ -117,4 +121,41 @@ function update_settings(data) {
             id.value = settings_table[key]
         }
     }
+}
+
+function check_connected(data) {
+    if (data == "False") {
+        // Send notification error
+        bulmaToast.toast({
+            message: "Could not connect to printer... <a onclick=\"reconnect_printer()\">Retry?</a>",
+            type: "is-danger",
+            position: "bottom-right",
+            dismissible: true,
+            closeOnClick: false,
+            duration: 99999999,
+            animate: { in: "fadeInRight", out: "fadeOutRight" }
+        });
+        return
+    } else if (data == "True") {
+        // Send notification success
+        bulmaToast.toast({
+            message: "Printer connected successfully!",
+            type: "is-success",
+            position: "bottom-right",
+            dismissible: true,
+            closeOnClick: false,
+            duration: 4000,
+            animate: { in: "fadeInRight", out: "fadeOutRight" }
+        });
+    }
+
+    console.log("Checking printer connection...")
+    ws.send("RQV~connected")
+}
+
+function reconnect_printer() {
+    ws.send("RCN")
+    setTimeout(() => {
+        check_connected("");
+    }, 1000);
 }
