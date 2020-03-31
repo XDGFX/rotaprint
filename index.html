@@ -10,9 +10,9 @@
     <link rel="stylesheet" href="css/custom.css">
     <link rel="stylesheet" href="css/animate.css">
     <link rel="stylesheet" href="css/modal-fx.css">
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
     <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
-    <script src="js/ws.js"></script>
-    <script src="js/help.js"></script>
     <script defer src="js/main.js"></script>
     <script src="js/bulma-toast.min.js"></script>
     <script src="js/bulma.js"></script>
@@ -33,7 +33,10 @@
         <nav class="level container">
             <!-- Level left -->
             <div class="level-left">
-                <div class="container">
+                <figure class="image is-64x64">
+                    <img src="branding/logo_option3.png">
+                </figure>
+                <div class="container" style="padding-left: 1em; top: -4px;">
                     <p class="title">rotaprint</p>
                     <p class="subtitle">Printer UI <b>1.0</b></p>
                 </div>
@@ -72,7 +75,7 @@
                             </span>
 
                             <script>
-                                const fileInput = document.querySelector('#gcode_uploader input[type=file]');
+                                const fileInput = document.querySelector('#gcode_uploader inputtype=file');
                                 fileInput.onchange = () => {
                                     if (fileInput.files.length > 0) {
                                         send_gcode(fileInput)
@@ -205,13 +208,45 @@
             </div>
         </div>
 
+        <div class="modal modal-fx-fadeInScale" id="modal_confirm_settings">
+            <div class="modal-background" onclick="hide_help(this)"></div>
+            <div class="modal-content">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">Confirmation of Changes</p>
+                    <button class="delete" onclick="hide_help(this.parentElement.parentElement)"></button>
+                </header>
+                <section class="modal-card-body">
+                    <table class="table has-text-centered">
+                        <thead>
+                            <tr>
+                                <th>Setting</th>
+                                <th>Old Value</th>
+                                <th>New Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="updated_settings_table">
 
-        <!-- <div class="columns">
-            <div class="column">
-                <button class="button is-centered">Print</button>
-                <button class="button is-centered">Select File</button>
+                        </tbody>
+                    </table>
+                    <!-- <h3 class="h3">Please confirm the below changes:</h3>
+                    <p>Communication Port: <code>grbl-1.1h/ttyGRBL</code> > <code>grbl-1.1h/ttyGRBLg</code></p>
+                    <p>Part Length: <code>100</code> > <code>100980</code></p> -->
+                </section>
+                <footer class="modal-card-foot">
+                    <button id="confirm_settings_button" disabled class="button is-success"
+                        onclick="send_new_settings('CONFIRM')"></button>
+                    <button class="button" onclick="hide_help(this.parentElement.parentElement)">Cancel</button>
+                </footer>
             </div>
-        </div> -->
+        </div>
+
+
+        <!-- <div class=" columns">
+                        <div class="column">
+                            <button class="button is-centered">Print</button>
+                            <button class="button is-centered">Select File</button>
+                        </div>
+            </div> -->
 
 
     </section>
@@ -237,7 +272,8 @@
 
                         <div class="columns">
                             <div class="column is-8" style="padding: 0.5em">
-                                <button disabled id="settings_apply" class="button is-danger is-fullwidth">Apply
+                                <button disabled id="settings_apply" class="button is-danger is-fullwidth"
+                                    onclick="send_new_settings()">Apply
                                     Settings</button>
                             </div>
                             <div class="column is-narrow" style="padding: 0.5em">
@@ -261,16 +297,16 @@
                     <br>
                     <div class="field">
                         <div class="field">
-                            <label class="label">Communication Port</label>
+                            <label class="label">Communication Port <code>port</code></label>
                             <div class="field has-addons" style="margin: 0;">
                                 <p class="control has-icons-left is-expanded">
-                                    <input id="setting_port" class="input" type="text">
+                                    <input id="setting_port" class="input" type="text" oninput="check_changed(this)">
                                     <span class="icon is-small is-left">
                                         <i class="fas fa-code"></i>
                                     </span>
                                 </p>
                                 <p class="control">
-                                    <button class="button" onclick="check_connected('');">Check</button>
+                                    <button class="button" onclick="check_connected('')">Check</button>
                                 </p>
                             </div>
                             <p class="help">This is the serial port used to communicate with the printer. It is
@@ -286,7 +322,7 @@
                     <h2 id="settings_defaults" class="heading">Default Settings</h2>
                     <br>
                     <div class="field">
-                        <label class="label">Part Length</label>
+                        <label class="label">Part Length <code>length</code></label>
                         <div class="field has-addons" style="margin: 0;">
                             <p class="control">
                                 <input id="setting_length" class="input" type="number" style="width: 100px;"
@@ -300,7 +336,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Part Radius</label>
+                        <label class="label">Part Radius <code>radius</code></label>
                         <div class="field has-addons" style="margin: 0;">
                             <p class="control">
                                 <input id="setting_radius" class="input" type="number" style="width: 100px;"
@@ -314,7 +350,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Batch Size</label>
+                        <label class="label">Batch Size <code>batch</code></label>
                         <p class="control is-expanded">
                             <input id="setting_batch" class="slider is-fullwidth" step="1" min="1" max="5" type="range"
                                 oninput="check_changed(this)">
@@ -333,7 +369,7 @@
                     <h2 id="settings_controller" class="heading">Controller Settings</h2>
                     <br>
                     <div class="field">
-                        <label class="label">Length of Step Pulse</label>
+                        <label class="label">Length of Step Pulse <code>$0</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -361,7 +397,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Step Idle Delay</label>
+                        <label class="label">Step Idle Delay <code>$1</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -390,7 +426,7 @@
 
                     <div class="field">
                         <fieldset disabled class="advanced_setting">
-                            <label class="label">Step Port Invert</label>
+                            <label class="label">Step Port Invert <code>$2</code></label>
                             <div class="columns" style="margin: 0;">
                                 <div class="column" style="padding: 0;">
                                     <div class="field has-addons" style="margin: 0;">
@@ -417,7 +453,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Direction Port Invert</label>
+                        <label class="label">Direction Port Invert <code>$3</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -441,7 +477,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Step Enable Invert</label>
+                        <label class="label">Step Enable Invert <code>$4</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -465,7 +501,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Limit Pins Invert</label>
+                        <label class="label">Limit Pins Invert <code>$5</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -490,7 +526,7 @@
 
                     <div class="field">
                         <fieldset disabled class="advanced_setting">
-                            <label class="label">Probe Pin Invert</label>
+                            <label class="label">Probe Pin Invert <code>$6</code></label>
                             <div class="columns" style="margin: 0;">
                                 <div class="column" style="padding: 0;">
                                     <div class="field has-addons" style="margin: 0;">
@@ -517,7 +553,7 @@
 
                     <div class="field">
                         <fieldset disabled class="advanced_setting">
-                            <label class="label">Junction Deviation</label>
+                            <label class="label">Junction Deviation <code>$11</code></label>
                             <div class="columns" style="margin: 0;">
                                 <div class="column" style="padding: 0;">
                                     <div class="field has-addons" style="margin: 0;">
@@ -547,7 +583,7 @@
 
                     <div class="field">
                         <fieldset disabled class="advanced_setting">
-                            <label class="label">Arc Tolerance</label>
+                            <label class="label">Arc Tolerance <code>$12</code></label>
                             <div class="columns" style="margin: 0;">
                                 <div class="column" style="padding: 0;">
                                     <div class="field has-addons" style="margin: 0;">
@@ -575,7 +611,7 @@
 
                     <div class="field">
                         <fieldset disabled class="advanced_setting">
-                            <label class="label">Report Unit</label>
+                            <label class="label">Report Unit <code>$13</code></label>
                             <div class="columns" style="margin: 0;">
                                 <div class="column" style="padding: 0;">
                                     <div class="field has-addons" style="margin: 0;">
@@ -601,7 +637,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Soft Limits</label>
+                        <label class="label">Soft Limits <code>$20</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -627,7 +663,7 @@
 
                     <div class="field">
                         <fieldset disabled class="advanced_setting">
-                            <label class="label">Hard limits</label>
+                            <label class="label">Hard limits <code>$21</code></label>
                             <div class="columns" style="margin: 0;">
                                 <div class="column" style="padding: 0;">
                                     <div class="field has-addons" style="margin: 0;">
@@ -655,7 +691,7 @@
 
                     <div class="field">
                         <fieldset disabled class="advanced_setting">
-                            <label class="label">Homing Cycle</label>
+                            <label class="label">Homing Cycle <code>$22</code></label>
                             <div class="columns" style="margin: 0;">
                                 <div class="column" style="padding: 0;">
                                     <div class="field has-addons" style="margin: 0;">
@@ -682,7 +718,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Homing Direction Invert</label>
+                        <label class="label">Homing Direction Invert <code>$23</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -708,7 +744,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Homing Feed Rate</label>
+                        <label class="label">Homing Feed Rate <code>$24</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -732,7 +768,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Homing Seek Rate</label>
+                        <label class="label">Homing Seek Rate <code>$25</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -756,7 +792,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Homing Debounce</label>
+                        <label class="label">Homing Debounce <code>$26</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -782,7 +818,7 @@
 
                     <div class="field">
                         <fieldset disabled class="advanced_setting">
-                            <label class="label">Homing Pull Off</label>
+                            <label class="label">Homing Pull Off <code>$27</code></label>
                             <div class="columns" style="margin: 0;">
                                 <div class="column" style="padding: 0;">
                                     <div class="field has-addons" style="margin: 0;">
@@ -810,7 +846,7 @@
 
                     <div class="field">
                         <fieldset disabled class="advanced_setting">
-                            <label class="label">Laser Mode</label>
+                            <label class="label">Laser Mode <code>$32</code></label>
                             <div class="columns" style="margin: 0;">
                                 <div class="column" style="padding: 0;">
                                     <div class="field has-addons" style="margin: 0;">
@@ -841,7 +877,7 @@
                     <h2 id="settings_movement" class="heading">Movement Settings</h2>
                     <br>
                     <div class="field">
-                        <label class="label">Max Rate (X)</label>
+                        <label class="label">Max Rate (X) <code>$110</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -866,7 +902,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Max Rate (Y)</label>
+                        <label class="label">Max Rate (Y) <code>$111</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -891,7 +927,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Max Rate (Z)</label>
+                        <label class="label">Max Rate (Z) <code>$112</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -916,7 +952,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Acceleration (X)</label>
+                        <label class="label">Acceleration (X) <code>$120</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -941,7 +977,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Acceleration (Y)</label>
+                        <label class="label">Acceleration (Y) <code>$121</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">
@@ -966,7 +1002,7 @@
                     </div>
 
                     <div class="field">
-                        <label class="label">Acceleration (Z)</label>
+                        <label class="label">Acceleration (Z) <code>$122</code></label>
                         <div class="columns" style="margin: 0;">
                             <div class="column" style="padding: 0;">
                                 <div class="field has-addons" style="margin: 0;">

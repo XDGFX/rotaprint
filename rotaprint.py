@@ -95,11 +95,10 @@ class webserver:
         webserverThread.daemon = True
         webserverThread.start()
         logging.info("Webserver initialised")
-        logging.info("Accessible at http://localhost:5000")
+        logging.info("Accessible at http://localhost:8080")
 
     def run(self):
         import http.server
-        os.chdir("static")
 
         PORT = 8080
         Handler = http.server.SimpleHTTPRequestHandler
@@ -152,7 +151,7 @@ class database:
         ("$132", 200),    # Z Max travel, mm
 
         # --- Printer specific ---
-        ("port", "/dev/ttyUSB1"),
+        ("port", "grbl-1.1h/ttyGRBL"),  # TODO CHANGE to /dev/ttyUSB1
 
         # --- Option defaults ---
         ("length", 100),
