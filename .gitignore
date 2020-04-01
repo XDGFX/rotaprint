@@ -1,6 +1,7 @@
 .venv/
 .vscode/
 __pycache__/
+node_modules/
 grbl-1.1h/*
 !grbl-1.1h/simport.sh
 rotaprint.db

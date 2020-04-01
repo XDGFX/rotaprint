@@ -1,0 +1,32 @@
+{
+  "name": "rota-print",
+  "version": "1.0.0",
+  "description": "Graphic application on three dimensional surfaces.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.13.0",
+    "animate.css": "^3.7.2",
+    "bulma": "^0.8.1",
+    "bulma-extensions": "^6.2.7",
+    "bulma-modal-fx": "^1.1.1",
+    "bulma-toast": "^1.5.4"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XDGFX/rota-print.git"
+  },
+  "author": "Callum Morrison",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/XDGFX/rota-print/issues"
+  },
+  "homepage": "https://github.com/XDGFX/rota-print#readme"
+}
