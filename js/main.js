@@ -29,6 +29,9 @@ ws.onmessage = function (event) {
         case "RQV":
             check_connected(response[1]);
             break
+        case "DBS":
+            send_new_settings(response[1]);
+            break
     }
 };
 
@@ -114,12 +117,12 @@ function update_settings(data) {
 var commit_settings = {};
 function send_new_settings(data) {
     if (data == "CONFIRM") {
-        JSON.stringify(commit_settings)
-        console.log("CONFIRMED")
+        send_data = JSON.stringify(commit_settings)
+        console.log(send_data)
         return
     }
 
-    var commit_settings = {};
+    commit_settings = {};
     html = ""
     invalid_data = false
     for (var i = 0; i < changed.length; i++) {
@@ -259,7 +262,7 @@ changed = ""
 function check_changed(element) {
     id = element.id.split("_")[1]
 
-    old_value = settings_table[id]
+    old_value = String(settings_table[id])
     current_value = element.value
 
     if (old_value == current_value) {

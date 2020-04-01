@@ -18,30 +18,30 @@ import sqlite3
 import os
 
 
-def get_args():
-    # Setup argument parser
-    import argparse
+# def get_args():
+#     # Setup argument parser
+#     import argparse
 
-    desc = "Print on cylindrical components!"
-    parser = argparse.ArgumentParser(description=desc)
+#     desc = "Print on cylindrical components!"
+#     parser = argparse.ArgumentParser(description=desc)
 
-    parser.add_argument('gcode', type=str, help='Input GCODE file')
-    parser.add_argument('length', type=float,
-                        help='Length of part to print on')
-    parser.add_argument('radius', type=float,
-                        help='Radius of part to print on')
-    parser.add_argument(
-        '-p', '--port', type=str, help='Serial port to connect to. See: bit.ly/2U8aFvV',
-        default='grbl-1.1h/ttyGRBL')
-    parser.add_argument('-v', '--verbose',
-                        help='Show verbose information', action='store_true')
-    parser.add_argument('-d', '--debug',
-                        help='Show debug information', action='store_true')
-    parser.add_argument(
-        '-c', '--check', help='Check GCODE only, do not run', action='store_true')
+#     parser.add_argument('gcode', type=str, help='Input GCODE file')
+#     parser.add_argument('length', type=float,
+#                         help='Length of part to print on')
+#     parser.add_argument('radius', type=float,
+#                         help='Radius of part to print on')
+#     parser.add_argument(
+#         '-p', '--port', type=str, help='Serial port to connect to. See: bit.ly/2U8aFvV',
+#         default='grbl-1.1h/ttyGRBL')
+#     parser.add_argument('-v', '--verbose',
+#                         help='Show verbose information', action='store_true')
+#     parser.add_argument('-d', '--debug',
+#                         help='Show debug information', action='store_true')
+#     parser.add_argument(
+#         '-c', '--check', help='Check GCODE only, do not run', action='store_true')
 
-    args = parser.parse_args()
-    return args
+#     args = parser.parse_args()
+#     return args
 
 
 def setup_log():
@@ -52,15 +52,15 @@ def setup_log():
     logging.getLogger("websockets").setLevel(logging.WARNING)
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
-    if args.debug:
-        logging.basicConfig(level=logging.DEBUG,
-                            format='%(name)-12s: %(levelname)-8s %(message)s')
-    elif args.verbose:
-        logging.basicConfig(level=logging.INFO,
-                            format='%(name)-12s: %(levelname)-8s %(message)s')
-    else:
-        logging.basicConfig(level=logging.WARNING,
-                            format='%(name)-12s: %(levelname)-8s %(message)s')
+    # if args.debug:
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(name)-12s: %(levelname)-8s %(message)s')
+    # elif args.verbose:
+    # logging.basicConfig(level=logging.INFO,
+    # format='%(name)-12s: %(levelname)-8s %(message)s')
+    # else:
+    # logging.basicConfig(level=logging.WARNING,
+    # format='%(name)-12s: %(levelname)-8s %(message)s')
 
     return log
 
@@ -222,6 +222,7 @@ class websocket:
             while True:
                 # Listen for new messages
                 message = await websocket.recv()
+                message = message.split("~")
                 log.debug(f'WSKT > {message}')
 
                 if message == "BFH":
@@ -688,21 +689,21 @@ class grbl:
         log.info(f"Time elapsed: {str(end_time-start_time)}")
         self.is_run = False
 
-        if args.check:
-            log.info("Checking response...")
-            if error_count > 0:
-                log.error(
-                    f"Check failed: {error_count} errors found! See output for details.")
-                quit()
-            else:
-                log.info("Check passed: No errors found in g-code program.")
-        else:
-            log.debug(
-                "Wait until Grbl completes buffered g-code blocks before exiting.")
+        # if args.check:
+        #     log.info("Checking response...")
+        #     if error_count > 0:
+        #         log.error(
+        #             f"Check failed: {error_count} errors found! See output for details.")
+        #         quit()
+        #     else:
+        #         log.info("Check passed: No errors found in g-code program.")
+        # else:
+        log.debug(
+            "Wait until Grbl completes buffered g-code blocks before exiting.")
 
 
-# Get input arguments
-args = get_args()
+# # Get input arguments
+# args = get_args()
 
 log = setup_log()
 
