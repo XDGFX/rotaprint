@@ -37,6 +37,9 @@ ws.onmessage = function (event) {
         case "ECO":
             echo_chamber(payload);
             break
+        case "LOG":
+            update_logs(payload);
+            break
     }
 };
 
@@ -228,13 +231,13 @@ function check_connected(data) {
     }
 
     console.log("Checking printer connection...")
-    // ws.send(payloader("RQV", "connected")
+    ws.send(payloader("RQV", "connected"))
 }
 
 function reconnect_printer() {
-    ws.send("RCN")
+    ws.send(payloader("RCN"))
     setTimeout(() => {
-        check_connected("");
+        check_connected();
     }, 1000);
 }
 
@@ -242,12 +245,14 @@ function reconnect_printer() {
 // HELP
 function show_help(which) {
     document.getElementById(which).classList.add('is-active');
-    modal_animation()
 }
 
 function hide_help(which) {
     id = which.parentElement.id
     document.getElementById(id).classList.remove('is-active');
+    setTimeout(function () {
+        modal_animation()
+    }, 250);
 }
 
 
@@ -427,23 +432,77 @@ document.getElementById("machine_settings").addEventListener("scroll", evt => {
 }
 )
 
-function modal_animation() {
-    lottie.loadAnimation({
-        container: document.getElementById("animation_check_mode"), // the dom element that will contain the animation
-        renderer: 'svg',
-        loop: true,
-        autoplay: true,
-        path: 'branding/animation_check_mode.json' // the path to the animation json
-    });
+var animation_object
+function modal_animation(which, toggle) {
+
+    switch (toggle) {
+        case 'show':
+            animation_object = lottie.loadAnimation({
+                container: document.getElementById(which), // the dom element that will contain the animation
+                renderer: 'svg',
+                loop: true,
+                autoplay: true,
+                path: 'branding/animation_check_mode.json' // the path to the animation json
+            });
+            return
+        default:
+            animation_object.destroy()
+            return
+    }
 }
 
-// window.addEventListener("scroll", function () {
+// LOGS
+var quickviews = bulmaQuickview.attach(); // quickviews now contains an array of all Quickview instances
+force_scroll = true
+function update_logs(data) {
+    update = document.getElementById("logs_auto_update").checked
+    if (!update) {
+        return
+    }
 
-//     defaults = document.getElementById("settings_defaults")
+    elm = document.getElementById("logs_div")
+    scroller = elm.parentElement;
 
-//     if (window.scrollY > (elementTarget.offsetTop + elementTarget.offsetHeight)) {
-//         alert("You've scrolled past the second div");
-//     }
+    if (data == "FORCE") {
+        ws.send(payloader("LOG"))
+    } else {
+        data = data.replace(/(?:\r\n|\r|\n)/g, "<~>")
+        data = data.split("<~>")
 
-//     console.log(windows.scrollY)
-// });
+        table = "<table class=\"table\">"
+
+        for (var i = 0; i < data.length - 2; i += 3) {
+            table = table + "<tr><td>" + data[i] + "</td><td>" + data[i + 1] + "</td><td>" + data[i + 2] + "</td></tr>";
+        }
+        table = table + "</table>";
+
+        if ((scroller.scrollHeight - scroller.clientHeight < scroller.scrollTop + 50) || force_scroll) {
+            scroll = true
+        } else {
+            scroll = false
+        }
+
+        if (elm.innerHTML == "") {
+            elm.innerHTML = table
+            scroll = true
+        } else {
+            elm.innerHTML = table
+        }
+
+        if (scroll) {
+            scroller.scrollTop = scroller.scrollHeight;
+            force_scroll = false
+        }
+
+        if (document.getElementById("logs_quickview").classList.contains("is-active")) {
+            if (update) {
+                setTimeout(function () {
+                    update_logs("FORCE")
+                }, 1000);
+            }
+        } else {
+            force_scroll = true
+        }
+    }
+
+}

@@ -1,4 +1,4 @@
-html, .section {
+html, .section, .quickview-body {
 	scroll-behavior: smooth
 }
 
@@ -63,10 +63,7 @@ input[type=number] {
 
 .modal-card-title {
   font-weight: bold;
-}
-
-.modal-card-head {
-  background-color: white;
+  text-transform: lowercase;
 }
 
 /* For use on horizontal sliders */

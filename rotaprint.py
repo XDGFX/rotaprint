@@ -18,6 +18,7 @@ import threading
 import logging
 import sqlite3
 import os
+import io
 from json import dumps, loads
 
 
@@ -48,24 +49,27 @@ from json import dumps, loads
 
 
 def setup_log():
-    # Set log level
+    # Create normal logger
     log = logging.getLogger("logger")
+    log.setLevel(logging.DEBUG)
+
+    # Create variable logger for GUI
+    log_capture_string = io.StringIO()
+    ch = logging.StreamHandler(log_capture_string)
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        '%(asctime)s<~>%(levelname)s<~>%(message)s')
+    ch.setFormatter(formatter)
+    log.addHandler(ch)
 
     # Decrease output of external modules
     logging.getLogger("websockets").setLevel(logging.WARNING)
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
 
     # if args.debug:
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(name)-12s: %(levelname)-8s %(message)s')
-    # elif args.verbose:
-    # logging.basicConfig(level=logging.INFO,
-    # format='%(name)-12s: %(levelname)-8s %(message)s')
-    # else:
-    # logging.basicConfig(level=logging.WARNING,
-    # format='%(name)-12s: %(levelname)-8s %(message)s')
+    logging.basicConfig(format='%(name)-12s: %(levelname)-8s %(message)s')
 
-    return log
+    return log, log_capture_string
 
 
 def g0_g1_conversion(gcode):
@@ -86,10 +90,6 @@ def g0_g1_conversion(gcode):
     return gcode
 
 
-def br():
-    log.info("------")
-
-
 def payloader(command, payload):
     # Used to combine a command and payload into a single JSON style string
     data = {
@@ -104,13 +104,13 @@ def payloader(command, payload):
 
 class webserver:
     def start(self):
-        logging.info("Initialising webserver")
+        log.info("Initialising webserver")
         # Create thread to run webserver.run as a daemon (in background)
         webserverThread = threading.Thread(target=self.run)
         webserverThread.daemon = True
         webserverThread.start()
-        logging.info("Webserver initialised")
-        logging.info("Accessible at http://localhost:8080")
+        log.info("Webserver initialised")
+        log.info("Accessible at http://localhost:8080")
 
     def run(self):
         import http.server
@@ -239,10 +239,7 @@ class websocket:
             while True:
                 # Listen for new messages
                 data = await websocket.recv()
-                log.debug(f'WSKT > {data}')
-
                 response = self.handler(data)
-                log.debug(f'WSKT < {response}')
                 await websocket.send(response)
 
                 # message = message.split("~")
@@ -319,7 +316,7 @@ class websocket:
             # Convert to (reversed) tuple for SQL query
             db_settings = [(v, k) for k, v in settings.items()]
             db.set_settings(db_settings)
-            return (payloader("DBS", "DONE"))
+            return "DONE"
 
         def send_manual(self, payload):
             pass
@@ -328,29 +325,29 @@ class websocket:
             # Send all supplied GCODE to printer
             if gcode == "":
                 log.error("No GCODE supplied; cannot print")
-                return (payloader("ERROR", "No gcode"))
+                return "No gcode"
             else:
                 g.send(gcode)
-                br()
 
         def fetch_settings(self, payload):
             # Return all database settings in JSON format
             current_settings = db.get_settings()
-            data = payloader("FTS", dumps(current_settings))
-            return data
+            return dumps(current_settings)
 
         def fetch_value(self, payload):
             # Get current value of variable
             variable = {
                 "connected": connected,
             }
-            data = payloader("RQV", variable[data])
-            return data
+            return str(variable[payload])
 
         def reconnect_printer(self, payload):
             g.reconnect()
-            data = payloader("RCN", "DONE")
-            return data
+            return "DONE"
+
+        def return_logs(self, payload):
+            log_contents = logs.getvalue()
+            return log_contents
 
         switcher = {
             "EST": emergency_stop,
@@ -365,34 +362,29 @@ class websocket:
             "PRN": print_now,
             "FTS": fetch_settings,
             "RQV": fetch_value,
-            "RCN": reconnect_printer
+            "RCN": reconnect_printer,
+            "LOG": return_logs,
         }
 
         data = loads(data)
         command = data["command"]
         payload = data["payload"]
 
-        output = switcher[command](self, payload)
-        return output
+        # if not command == "LOG":
+        if len(payload) < 50:
+            log.debug(f'WSKT > \"{command}\" \"{payload}\"')
+        else:
+            log.debug(f'WSKT > \"{command}\" (payload too long)')
 
-        # for item in message:
-        #     # Separate command and data
-        #     item = item.split("~")
+        response = switcher[command](self, payload)
 
-        # # Execute command
-        # if len(item) == 2:
-        #     # Message has data
-        #     output = switcher[item[0]](self, item[1])
-        #     output = item[0] + "~" + output
-        #     return output
-        # elif item[0] == "":
-        #     # Blank message
-        #     pass
-        # elif len(item) == 1:
-        #     # Message has no data
-        #     output = switcher[item[0]](self)
-        #     output = output = item[0] + "~" + output
-        #     return output
+        if not command == "LOG":
+            if len(response) < 50:
+                log.debug(f'WSKT < \"{command}\" \"{response}\"')
+            else:
+                log.debug(f'WSKT < \"{command}\" (payload too long)')
+
+        return payloader(command, response)
 
 
 class grbl:
@@ -740,7 +732,7 @@ class grbl:
 # # Get input arguments
 # args = get_args()
 
-log = setup_log()
+log, logs = setup_log()
 
 
 # --- SETTINGS ---
@@ -759,47 +751,38 @@ connected = False  # Check whether backend is successfully connected to printer
 # Load selected gcode file into list
 # logging.debug("Loading supplied gcode")
 # gcode = gcode_load(args.gcode)
-# br()
 # Convert commands where printing to G1 to indicate printing
 # gcode = g0_g1_conversion(gcode)
 
 # Connect backend database
 db = database()
 db.connect()
-br()
 
 # Start GUI websocket
 w = websocket()
 w.connect()
-br()
 
 # Start webserver
 webserver().start()
-br()
 
 # # Connect grbl
 g = grbl()  # GRBL object
 g.connect()  # Serial connection
-br()
 
 # if connected:
 #     # Set up monitoring thread
 #     g.monitor()
-#     br()
 
 #     # Check for out of date grbl settings, and send if needed
 #     g.send_settings()
-#     br()
 
 # Check supplied GCODE if required
 # if args.check:
 #     log.info("Check mode enabled")
 #     log.info("Running full program check...")
-#     br()
 #     g.check_mode()  # Enable
 #     g.send(gcode)
 #     g.check_mode()  # Disable
-#     br()
 
 # Homing cycle
 # g.home()

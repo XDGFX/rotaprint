@@ -16,6 +16,7 @@
     <script defer src="node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
     <script src="node_modules/bulma-toast/dist/bulma-toast.min.js"></script>
     <script src="node_modules/lottie-web/build/player/lottie.min.js"></script>
+    <script src="node_modules/bulma-extensions/bulma-quickview/dist/js/bulma-quickview.min.js"></script>
     <script defer src="main.js"></script>
 
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
@@ -31,6 +32,8 @@
             </p>
         </span></div>
 
+    <button id="logs_quickview_button" class="button is-primary" data-show="quickview" data-target="logs_quickview"
+        onclick="update_logs('FORCE')"></button>
 
     <!-- MAIN SECTION -->
     <section class="section">
@@ -96,8 +99,8 @@
             <div class="box">
                 <input id="switch_check_mode" type="checkbox" class="switch is-rounded">
                 <label for="switch_check_mode">Check mode</label>
-                <a onclick="show_help('modal_check_mode')">?</a>
-                <input class=" input" type="text" id="custom_command" onkeydown="return send_custom_code(event)"
+                <a onclick="show_help('modal_check_mode'), modal_animation('animation_check_mode', 'show')">?</a>
+                <input class="input" type="text" id="custom_command" onkeydown="return send_custom_code(event)"
                     placeholder="Custom command"><br>
             </div>
 
@@ -125,6 +128,9 @@
                     checking
                     and verification. If you are happy with the output, disable check mode for real printing.
                 </section>
+                <footer class="modal-card-foot">
+                    <button class="button" onclick="hide_help(this.parentElement.parentElement)">Ok</button>
+                </footer>
             </div>
         </div>
 
@@ -246,13 +252,25 @@
         </div>
 
 
-        <!-- <div class=" columns">
-                        <div class="column">
-                            <button class="button is-centered">Print</button>
-                            <button class="button is-centered">Select File</button>
-                        </div>
-            </div> -->
+        <div id="logs_quickview" class="quickview">
+            <header class="quickview-header">
+                <p class="title">Logs</p>
+                <span class="delete" data-dismiss="quickview"></span>
+            </header>
 
+            <div class="quickview-body">
+                <div id="logs_div" class="quickview-block">
+                </div>
+            </div>
+
+            <footer class="quickview-footer">
+                <div class="field">
+                    <input id="logs_auto_update" type="checkbox" name="switchRoundedDefault" class="switch is-rounded"
+                        checked="checked" autocomplete="off" onchange="update_logs('FORCE')">
+                    <label for="logs_auto_update">Auto update</label>
+                </div>
+            </footer>
+        </div>
 
     </section>
 
@@ -311,7 +329,7 @@
                                     </span>
                                 </p>
                                 <p class="control">
-                                    <button class="button" onclick="check_connected('')">Check</button>
+                                    <button class="button" onclick="check_connected()">Check</button>
                                 </p>
                             </div>
                             <p class="help">This is the serial port used to communicate with the printer. It is
@@ -389,7 +407,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$0')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$0')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -417,7 +436,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$1')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$1')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -473,7 +493,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$3')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$3')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -497,7 +518,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$4')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$4')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -521,7 +543,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$5')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$5')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -657,7 +680,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$20')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$20')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -738,7 +762,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$23')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$23')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -764,7 +789,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$24')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$24')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -788,7 +814,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$25')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$25')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -812,7 +839,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$26')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$26')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -897,7 +925,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$110')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$110')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -922,7 +951,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$111')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$111')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -947,7 +977,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$112')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$112')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -972,7 +1003,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$120')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$120')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -997,7 +1029,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$121')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$121')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>
@@ -1022,7 +1055,8 @@
                             </div>
                             <div class="column" style="padding: 0;">
                                 <p class="control">
-                                    <a onclick="set_default('setting_$122')" class="button is-pulled-right">Default</a>
+                                    <button onclick="set_default('setting_$122')"
+                                        class="button is-pulled-right">Default</button>
                                 </p>
                             </div>
                         </div>

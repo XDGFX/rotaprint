@@ -8,3 +8,4 @@
 - Different logins for different engineers (working on different projects)
 - 3D render view of final part - https://threejs.org/
 - Write machine code language for communication between JS and Python (e.g. DBU database update)
+- REEXPORT AE animation removing keyframes to reduce filesize, change spinner, change X
