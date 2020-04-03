@@ -12,10 +12,13 @@ import socketserver
 import serial
 import time
 import re
+import asyncio
+import websockets
 import threading
 import logging
 import sqlite3
 import os
+from json import dumps, loads
 
 
 # def get_args():
@@ -85,6 +88,18 @@ def g0_g1_conversion(gcode):
 
 def br():
     log.info("------")
+
+
+def payloader(command, payload):
+    # Used to combine a command and payload into a single JSON style string
+    data = {
+        "command": str(command),
+        "payload": str(payload)
+    }
+
+    # Convert to JSON string and return
+    data = dumps(data)
+    return data
 
 
 class webserver:
@@ -158,7 +173,6 @@ class database:
         ("radius", 10),
         ("batch", 5),
         ("check", False),
-
     ]
 
     def connect(self):
@@ -200,6 +214,11 @@ class database:
         settings = dict(self.cursor.fetchall())
         return settings
 
+    def set_settings(self, settings):
+        self.cursor.executemany(
+            'UPDATE \'settings\' SET value=? WHERE parameter=?', settings)
+        self.connection.commit()
+
 
 class websocket:
     # Class for interacting with front end GUI over websocket (to receive data)
@@ -213,53 +232,56 @@ class websocket:
 
     def listen(self):
         # Listen always for messages over websocket
-        import asyncio
-        import websockets
 
         async def listener(websocket, path):
-            hold = False
-            buffer = list()
+            # hold = False
+            # buffer = list()
             while True:
                 # Listen for new messages
-                message = await websocket.recv()
-                message = message.split("~")
-                log.debug(f'WSKT > {message}')
+                data = await websocket.recv()
+                log.debug(f'WSKT > {data}')
 
-                if message == "BFH":
-                    # Buffer hold condition
-                    hold = True
-                    buffer = list()
-                elif message == "BFR":
-                    # Buffer release condition
-                    hold = False
-                elif message == "GCD":
-                    # Load next message and update GCODE
-                    global gcode
-                    log.info("GCODE receiving...")
-                    gcode = await websocket.recv()
-                    gcode = [line.strip()
-                             for line in gcode.decode().split("\n")]
-                    log.info("GCODE successfully received")
-                    log.debug(f'WSKT < GCD~done')
-                    await websocket.send("GCD~done")
-                    continue
+                response = self.handler(data)
+                log.debug(f'WSKT < {response}')
+                await websocket.send(response)
 
-                if hold:
-                    buffer.append(message)
-                else:
-                    if buffer:
-                        # Buffer has data
-                        output = self.handler(buffer)
-                        log.debug(f'WSKT < {output}')
-                        await websocket.send(output)
+                # message = message.split("~")
 
-                        # Clear buffer
-                        buffer = list()
-                    else:
-                        # Normal message (convert to list)
-                        output = self.handler([message])
-                        log.debug(f'WSKT < {output}')
-                        await websocket.send(output)
+                # if message == "BFH":
+                #     # Buffer hold condition
+                #     hold = True
+                #     buffer = list()
+                # elif message == "BFR":
+                #     # Buffer release condition
+                #     hold = False
+                # elif message == "GCD":
+                #     # Load next message and update GCODE
+                #     global gcode
+                #     log.info("GCODE receiving...")
+                #     gcode = await websocket.recv()
+                #     gcode = [line.strip()
+                #              for line in gcode.decode().split("\n")]
+                #     log.info("GCODE successfully received")
+                #     log.debug(f'WSKT < GCD~done')
+                #     await websocket.send("GCD~done")
+                #     continue
+
+                # if hold:
+                #     buffer.append(message)
+                # else:
+                #     if buffer:
+                #         # Buffer has data
+                #         output = self.handler(buffer)
+                #         log.debug(f'WSKT < {output}')
+                #         await websocket.send(output)
+
+                #         # Clear buffer
+                #         buffer = list()
+                #     else:
+                #         # Normal message (convert to list)
+                #         output = self.handler([message])
+                #         log.debug(f'WSKT < {output}')
+                #         await websocket.send(output)
 
         asyncio.set_event_loop(asyncio.new_event_loop())
         server = websockets.serve(listener, 'localhost', 8765, max_size=None)
@@ -269,60 +291,66 @@ class websocket:
         asyncio.get_event_loop().run_until_complete(server)
         asyncio.get_event_loop().run_forever()
 
-    def handler(self, message):
-        def emergency_stop(self):
+    def handler(self, data):
+        def emergency_stop(self, payload):
             print("EST")
+
+        def buffer_hold(self, payload):
             pass
 
-        def buffer_hold(self):
+        def buffer_release(self, payload):
             pass
 
-        def buffer_release(self):
+        def set_length(self, payload):
             pass
 
-        def set_length(self, data):
+        def set_batch(self, payload):
             pass
 
-        def set_batch(self, data):
+        def set_radius(self, payload):
             pass
 
-        def set_radius(self, data):
+        def toggle_check_mode(self, payload):
             pass
 
-        def toggle_check_mode(self, data):
+        def database_set(self, payload):
+            settings = loads(payload)
+
+            # Convert to (reversed) tuple for SQL query
+            db_settings = [(v, k) for k, v in settings.items()]
+            db.set_settings(db_settings)
+            return (payloader("DBS", "DONE"))
+
+        def send_manual(self, payload):
             pass
 
-        def database_set(self, data):
-            pass
-
-        def send_manual(self, data):
-            pass
-
-        def print_now(self):
+        def print_now(self, payload):
             # Send all supplied GCODE to printer
             if gcode == "":
                 log.error("No GCODE supplied; cannot print")
-                return ("ERROR~No gcode")
+                return (payloader("ERROR", "No gcode"))
             else:
                 g.send(gcode)
                 br()
 
-        def fetch_settings(self):
+        def fetch_settings(self, payload):
             # Return all database settings in JSON format
-            from json import dumps
             current_settings = db.get_settings()
-            return dumps(current_settings)
+            data = payloader("FTS", dumps(current_settings))
+            return data
 
-        def fetch_value(self, data):
+        def fetch_value(self, payload):
             # Get current value of variable
             variable = {
                 "connected": connected,
             }
-            return str(variable[data])
+            data = payloader("RQV", variable[data])
+            return data
 
-        def reconnect_printer(self):
+        def reconnect_printer(self, payload):
             g.reconnect()
-            return "done"
+            data = payloader("RCN", "DONE")
+            return data
 
         switcher = {
             "EST": emergency_stop,
@@ -337,27 +365,34 @@ class websocket:
             "PRN": print_now,
             "FTS": fetch_settings,
             "RQV": fetch_value,
-            "RCN": reconnect_printer,
+            "RCN": reconnect_printer
         }
 
-        for item in message:
-            # Separate command and data
-            item = item.split("~")
+        data = loads(data)
+        command = data["command"]
+        payload = data["payload"]
 
-            # Execute command
-            if len(item) == 2:
-                # Message has data
-                output = switcher[item[0]](self, item[1])
-                output = item[0] + "~" + output
-                return output
-            elif item[0] == "":
-                # Blank message
-                pass
-            elif len(item) == 1:
-                # Message has no data
-                output = switcher[item[0]](self)
-                output = output = item[0] + "~" + output
-                return output
+        output = switcher[command](self, payload)
+        return output
+
+        # for item in message:
+        #     # Separate command and data
+        #     item = item.split("~")
+
+        # # Execute command
+        # if len(item) == 2:
+        #     # Message has data
+        #     output = switcher[item[0]](self, item[1])
+        #     output = item[0] + "~" + output
+        #     return output
+        # elif item[0] == "":
+        #     # Blank message
+        #     pass
+        # elif len(item) == 1:
+        #     # Message has no data
+        #     output = switcher[item[0]](self)
+        #     output = output = item[0] + "~" + output
+        #     return output
 
 
 class grbl:

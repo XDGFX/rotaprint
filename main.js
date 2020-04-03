@@ -17,20 +17,25 @@ ws.onopen = function (e) {
 
 ws.onmessage = function (event) {
     console.log(`[message] Data received from server: ${event.data}`);
-    response = event.data.split("~")
+    data = JSON.parse(event.data)
+    command = data["command"]
+    payload = data["payload"]
 
-    switch (response[0]) {
+    switch (command) {
         case "GCD":
-            send_gcode(response[1]);
+            send_gcode(payload);
             break
         case "FTS":
-            update_settings(response[1]);
+            update_settings(payload);
             break
         case "RQV":
-            check_connected(response[1]);
+            check_connected(payload);
             break
         case "DBS":
-            send_new_settings(response[1]);
+            send_new_settings(payload);
+            break
+        case "ECO":
+            echo_chamber(payload);
             break
     }
 };
@@ -57,6 +62,20 @@ ws.onerror = function (error) {
 
 
 // COMMANDS
+function payloader(command, payload) {
+    data = {
+        "command": String(command),
+        "payload": String(payload)
+    }
+
+    data = JSON.stringify(data)
+    return data
+}
+
+function echo_chamber(payload) {
+    console.log(payload)
+}
+
 function send_custom_code(e) {
     if (e.keyCode == 13) {
         element = document.getElementById("custom_command")
@@ -88,22 +107,23 @@ function send_gcode(data) {
     }
 
     console.log("GCODE detected...")
-    ws.send("GCD")
-    ws.send(data.files[0]);
+    ws.send(payloader("GCD", data.files[0]))
     console.log("The file has been sent...")
 
 }
 
 // DATABASE
 // Set default variable to make global
-settings_table = ""
+var settings_table = ""
 function update_settings(data) {
     // Get settings from database and update form values
+
     // Send command
     if (data == null) {
-        ws.send("FTS")
+        ws.send(payloader("FTS"))
         return
     }
+
     // Handle response
     settings_table = JSON.parse(data)
     for (const key of Object.keys(settings_table)) {
@@ -116,37 +136,65 @@ function update_settings(data) {
 
 var commit_settings = {};
 function send_new_settings(data) {
-    if (data == "CONFIRM") {
-        send_data = JSON.stringify(commit_settings)
-        console.log(send_data)
-        return
-    }
+    switch (data) {
+        case "CONFIRM":
+            send_data = JSON.stringify(commit_settings)
+            ws.send(payloader("DBS", send_data))
+            return
 
-    commit_settings = {};
-    html = ""
-    invalid_data = false
-    for (var i = 0; i < changed.length; i++) {
-        name = changed[i].id.replace("setting_", "")
-        new_value = changed[i].value
-        commit_settings[name] = new_value
-        if (new_value == "") {
-            new_value = "INVALID"
-            invalid_data = true
-        }
-        html = html.concat("<tr><th>", name, "</th><td><code>", settings_table[name], "</code></td><td><code>", new_value, "</code></td></tr>")
-    }
+        case "CHECK":
+            commit_settings = {};
+            html = ""
+            invalid_data = false
+            for (var i = 0; i < changed.length; i++) {
+                name = changed[i].id.replace("setting_", "")
+                new_value = changed[i].value
+                commit_settings[name] = new_value
+                if (new_value == "") {
+                    new_value = "INVALID"
+                    invalid_data = true
+                }
+                html = html.concat("<tr><th>", name, "</th><td><code>", settings_table[name], "</code></td><td><code>", new_value, "</code></td></tr>")
+            }
 
-    tb = document.getElementById("updated_settings_table")
-    tb.innerHTML = html
-    show_help("modal_confirm_settings")
+            tb = document.getElementById("updated_settings_table")
+            tb.innerHTML = html
+            show_help("modal_confirm_settings")
 
-    confirm_button = document.getElementById("confirm_settings_button")
-    if (!invalid_data) {
-        confirm_button.disabled = false
-        confirm_button.innerHTML = "Save changes"
-    } else {
-        confirm_button.disabled = true
-        confirm_button.innerHTML = "Invalid Data"
+            confirm_button = document.getElementById("confirm_settings_button")
+            if (!invalid_data) {
+                confirm_button.disabled = false
+                confirm_button.innerHTML = "Save changes"
+            } else {
+                confirm_button.disabled = true
+                confirm_button.innerHTML = "Invalid Data"
+            }
+            return
+
+        case "DONE":
+            // Send notification success
+            bulmaToast.toast({
+                message: "Database updated successfully!",
+                type: "is-success",
+                position: "bottom-right",
+                dismissible: true,
+                closeOnClick: false,
+                duration: 4000,
+                animate: { in: "fadeInRight", out: "fadeOutRight" }
+            });
+            return
+
+        case "ERROR":
+            bulmaToast.toast({
+                message: "Failed to update database.",
+                type: "is-danger",
+                position: "bottom-right",
+                dismissible: true,
+                closeOnClick: false,
+                duration: 99999999,
+                animate: { in: "fadeInRight", out: "fadeOutRight" }
+            });
+            return
     }
 }
 
@@ -180,7 +228,7 @@ function check_connected(data) {
     }
 
     console.log("Checking printer connection...")
-    ws.send("RQV~connected")
+    // ws.send(payloader("RQV", "connected")
 }
 
 function reconnect_printer() {
@@ -194,6 +242,7 @@ function reconnect_printer() {
 // HELP
 function show_help(which) {
     document.getElementById(which).classList.add('is-active');
+    modal_animation()
 }
 
 function hide_help(which) {
@@ -240,11 +289,9 @@ function toggle_advanced_settings() {
     for (var i = 0; i < advanced.length; i++) {
         advanced[i].disabled = !checked
 
-        console.log(advanced[i].tagname)
-        if (advanced[i].localName == "fieldset" && !checked) {
-            input = advanced[i].querySelectorAll([id ^= 'setting_'])
-            console.log(input)
-        }
+        // if (advanced[i].localName == "fieldset" && !checked) {
+        //     input = advanced[i].querySelectorAll([id ^= 'setting_'])
+        // }
 
     }
 
@@ -335,3 +382,68 @@ function set_default(input_id) {
     element.value = default_value
     check_changed(element)
 }
+
+// Settings menu scroller
+document.getElementById("machine_settings").addEventListener("scroll", evt => {
+    var quickLinks = document.querySelectorAll(".menu-list a");
+    y_pos = evt.target.scrollTop;
+
+    item_movement = document.getElementById("settings_movement")
+    item_controller = document.getElementById("settings_controller")
+    item_defaults = document.getElementById("settings_defaults")
+    item_connection = document.getElementById("settings_connection")
+
+    if (y_pos > item_movement.offsetTop) {
+        // Movement Settings
+        quickLinks[0].classList.remove("is-active")
+        quickLinks[1].classList.remove("is-active")
+        quickLinks[2].classList.remove("is-active")
+        quickLinks[3].classList.add("is-active")
+
+    } else if (y_pos > item_controller.offsetTop) {
+        // Controller Settings
+        quickLinks[0].classList.remove("is-active")
+        quickLinks[1].classList.remove("is-active")
+        quickLinks[2].classList.add("is-active")
+        quickLinks[3].classList.remove("is-active")
+
+    } else if (y_pos > item_defaults.offsetTop) {
+        // Default Settings
+        quickLinks[0].classList.remove("is-active")
+        quickLinks[1].classList.add("is-active")
+        quickLinks[2].classList.remove("is-active")
+        quickLinks[3].classList.remove("is-active")
+
+    } else {
+        // Printer Connection
+        quickLinks[0].classList.add("is-active")
+        quickLinks[1].classList.remove("is-active")
+        quickLinks[2].classList.remove("is-active")
+        quickLinks[3].classList.remove("is-active")
+    }
+
+
+
+}
+)
+
+function modal_animation() {
+    lottie.loadAnimation({
+        container: document.getElementById("animation_check_mode"), // the dom element that will contain the animation
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        path: 'branding/animation_check_mode.json' // the path to the animation json
+    });
+}
+
+// window.addEventListener("scroll", function () {
+
+//     defaults = document.getElementById("settings_defaults")
+
+//     if (window.scrollY > (elementTarget.offsetTop + elementTarget.offsetHeight)) {
+//         alert("You've scrolled past the second div");
+//     }
+
+//     console.log(windows.scrollY)
+// });

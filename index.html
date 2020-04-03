@@ -6,16 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>rotaprint</title>
 
-    <link rel="stylesheet" href="custom.css">
 
     <link rel="stylesheet" href="node_modules/bulma/css/bulma.css">
     <link rel="stylesheet" href="node_modules/bulma-extensions/dist/css/bulma-extensions.min.css">
     <link rel="stylesheet" href="node_modules/animate.css/animate.min.css">
     <link rel="stylesheet" href="node_modules/bulma-modal-fx/dist/css/modal-fx.min.css">
+    <link rel="stylesheet" href="custom.css">
 
-    <script defer src="main.js"></script>
-    <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    <script defer src="node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
     <script src="node_modules/bulma-toast/dist/bulma-toast.min.js"></script>
+    <script src="node_modules/lottie-web/build/player/lottie.min.js"></script>
+    <script defer src="main.js"></script>
 
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
@@ -118,7 +119,8 @@
                     before actual
                     printing occurs. By enabling <b>check mode</b> the GCODE will be streamed to the printer as
                     normal,
-                    but no movement will occur. <br><br>
+                    but no movement will occur.
+                    <div id="animation_check_mode"></div>
                     An output log will be presented once complete (will take as long as a normal print), for
                     checking
                     and verification. If you are happy with the output, disable check mode for real printing.
@@ -237,7 +239,7 @@
                 </section>
                 <footer class="modal-card-foot">
                     <button id="confirm_settings_button" disabled class="button is-success"
-                        onclick="send_new_settings('CONFIRM')"></button>
+                        onclick="send_new_settings('CONFIRM'); hide_help(this.parentElement.parentElement); hide_settings()"></button>
                     <button class="button" onclick="hide_help(this.parentElement.parentElement)">Cancel</button>
                 </footer>
             </div>
@@ -265,7 +267,7 @@
                     <div class="menu sticky">
                         <p class="menu-label"><b>General</b></p>
                         <ul id="menu" class="menu-list">
-                            <li><a class="menu_button" href="#settings_connection">Printer Connection</a></li>
+                            <li><a class="menu_button is-active" href="#settings_connection">Printer Connection</a></li>
                             <li><a class="menu_button" href="#settings_defaults">Default Settings</a></li>
                             <li><a class="menu_button" href="#settings_controller">Controller Settings</a></li>
                             <li><a class="menu_button" href="#settings_movement">Movement Settings</a></li>
@@ -276,7 +278,7 @@
                         <div class="columns">
                             <div class="column is-8" style="padding: 0.5em">
                                 <button disabled id="settings_apply" class="button is-danger is-fullwidth"
-                                    onclick="send_new_settings()">Apply
+                                    onclick="send_new_settings('CHECK')">Apply
                                     Settings</button>
                             </div>
                             <div class="column is-narrow" style="padding: 0.5em">
@@ -1028,6 +1030,8 @@
                             increasing until steppers stall, and then set 10-20% below this value.</a>
                         </p>
                     </div>
+
+                    <div style="height: 10em;"></div>
 
 
                 </div>

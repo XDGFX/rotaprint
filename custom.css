@@ -1,4 +1,4 @@
-html {
+html, .section {
 	scroll-behavior: smooth
 }
 
@@ -49,16 +49,16 @@ input[type=number] {
 
 /* Remove switch outline after toggling */
 .switch[type=checkbox]:focus+label::after,.switch[type=checkbox]:focus+label::before,.switch[type=checkbox]:focus+label:after,.switch[type=checkbox]:focus+label:before{
-    outline:0px;
+  outline:0;
 }
 
 /* Fix switch vertical position */
 .switch[type=checkbox]+label::before,.switch[type=checkbox]+label:before{
-    top:0.1rem;
+  top:0.1rem;
 }
 
 .switch[type=checkbox]+label::after,.switch[type=checkbox]+label:after{
-    top:0.35rem;
+  top:0.35rem;
 }
 
 .modal-card-title {

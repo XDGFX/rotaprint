@@ -3,21 +3,39 @@ import websockets
 import threading
 
 
-async def listen(websocket, path):
+async def consumer_handler(websocket, path):
+    async for message in websocket:
+        await consumer(message)
+
+
+async def producer_handler(websocket, path):
     while True:
-        need_update = await websocket.recv()
-        print(f'< {need_update}')
+        message = await producer()
+        await websocket.send(message)
 
 
-start_server = websockets.serve(listen(), 'localhost', 8765)
+async def handler(websocket, path):
+    consumer_task = asyncio.ensure_future(
+        consumer_handler(websocket, path))
+    producer_task = asyncio.ensure_future(
+        producer_handler(websocket, path))
+    _, pending = await asyncio.wait(
+        [consumer_task, producer_task],
+        return_when=asyncio.FIRST_COMPLETED,
+    )
+    for task in pending:
+        task.cancel()
+
+
+def consumer(message):
+    print(message)
+
+
+def producer(data):
+    return data
+
+
+start_server = websockets.serve(handler, 'localhost', 8765)
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
 
-
-async def speak(data):
-    async with websockets.connect('ws://localhost:8765') as websocket:
-        await websocket.send(data)
-        print(f'> {data}')
-
-
-asyncio.get_event_loop().run_until_complete(speak(input("? ")))

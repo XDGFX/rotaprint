@@ -9,4 +9,4 @@ async def speak(data):
         print(f'> {data}')
 
 
-asyncio.get_event_loop().run_until_complete(speak(input("? ")))
+asyncio.get_event_loop().run_until_complete(speak("~" + input("? ")))
