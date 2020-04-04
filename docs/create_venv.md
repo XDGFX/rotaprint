@@ -7,40 +7,29 @@ Both pip and npm are used for Python and JavaScript dependencies respectively.
 
 # Part A
 1. Check `pip` and `venv` are installed
-```shell
-    sudo apt-get update
-    sudo apt-get -y install python3-pip
-    sudo apt-get install python3-venv
+```bash
+sudo apt-get update
+sudo apt-get -y install python3-pip python3-venv
 ```
 
-2. Create virtual environment in `rota-print` install folder
-```shell
-    python3 -m venv .venv
+2. Create and activate virtual environment in `rota-print` install folder
+```bash
+# Uses fish shell, use Bash or whatever you prefer instead if you want!
+python3 -m venv .venv; source .venv/bin/activate.fish
 ```
 
-3. Activate virtual environment
-```shell
-    source .venv/bin/activate.fish  # Uses fish shell, use Bash or whatever you prefer instead if you want!
-```
-
-4. Install required packages
-```shell
-    pip3 install -r requirements.txt
+3. Install required packages
+```bash
+pip3 install -r requirements.txt
 ```
 
 # Part B
-1. Tell nodeenv to create a new environment using the existing python venv
-```shell
-    nodeenv -p
+1. Tell nodeenv to create a new environment using the existing python venv, and check install was successful. Output should be a version number e.g. `6.14.4`.
+```bash
+nodeenv -p; npm install -g npm; npm -v
 ```
 
-2. Validate installation was successful. Output should be a version number e.g. `6.14.4`
-```shell
-    npm install -g npm
-    npm -v
-```
-
-3. Install required npm dependencies
-```shell
-    npm install
+2. Install required npm dependencies
+```bash
+npm install
 ```

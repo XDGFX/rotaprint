@@ -89,9 +89,27 @@ function send_custom_code(e) {
     }
 }
 
+fileInput = document.getElementById('gcode_uploader')
+fileInput.onchange = () => {
+    if (fileInput.files.length > 0) {
+        send_gcode(fileInput)
+    } else {
+        bulmaToast.toast({
+            message: "No file selected...",
+            type: "is-danger",
+            position: "bottom-right",
+            dismissible: true,
+            closeOnClick: false,
+            animate: { in: "fadeInRight", out: "fadeOutRight" }
+        });
+    }
+}
+
 function send_gcode(data) {
-    if (data == "done") {
-        var fileName = document.querySelector('#gcode_uploader .file-name');
+    // Read file selected and send to backend, provide success response if received
+    if (data == "DONE") {
+
+        fileName = fileInput.parentElement.querySelectorAll("p")[0]
         fileName.classList.remove('has-text-grey-lighter');
         fileName.textContent = fileInput.files[0].name;
 
@@ -109,9 +127,12 @@ function send_gcode(data) {
         return
     }
 
-    console.log("GCODE detected...")
-    ws.send(payloader("GCD", data.files[0]))
-    console.log("The file has been sent...")
+    var reader = new FileReader();
+    reader.readAsText(fileInput.files[0], "UTF-8");
+    reader.onload = function (evt) {
+        gcode = evt.target.result;
+        ws.send(payloader("GCD", gcode))
+    }
 
 }
 

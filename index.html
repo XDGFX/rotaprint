@@ -66,9 +66,9 @@
         <div class="container">
             <div class="columns is-centered">
                 <div class="column is-narrow">
-                    <div id="gcode_uploader" class="file has-name is-boxed is-primary">
+                    <div class="file has-name is-boxed is-primary">
                         <label class="file-label">
-                            <input class="file-input" type="file" name="resume">
+                            <input id="gcode_uploader" class="file-input" type="file">
                             <span class="file-cta">
                                 <span class="file-icon">
                                     <i class="fas fa-upload"></i>
@@ -80,16 +80,6 @@
                             <span class="file-name" style="width:16em;">
                                 <p class="has-text-grey-lighter">No file selected...</p>
                             </span>
-
-                            <script>
-                                const fileInput = document.querySelector('#gcode_uploader inputtype=file');
-                                fileInput.onchange = () => {
-                                    if (fileInput.files.length > 0) {
-                                        send_gcode(fileInput)
-                                    }
-                                }
-                            </script>
-
                         </label>
                     </div>
                 </div>
@@ -122,7 +112,7 @@
                     before actual
                     printing occurs. By enabling <b>check mode</b> the GCODE will be streamed to the printer as
                     normal,
-                    but no movement will occur.
+                    but no movement will occur. <br><br>
                     <div id="animation_check_mode"></div>
                     An output log will be presented once complete (will take as long as a normal print), for
                     checking

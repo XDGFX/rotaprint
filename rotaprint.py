@@ -321,6 +321,13 @@ class websocket:
         def send_manual(self, payload):
             pass
 
+        def receive_gcode(self, payload):
+            global gcode
+            gcode = [line.strip() for line in payload.split("\n")
+                     if not line.startswith('#')]
+
+            return "DONE"
+
         def print_now(self, payload):
             # Send all supplied GCODE to printer
             if gcode == "":
@@ -359,6 +366,7 @@ class websocket:
             "CHK": toggle_check_mode,
             "DBS": database_set,
             "GRB": send_manual,
+            "GCD": receive_gcode,
             "PRN": print_now,
             "FTS": fetch_settings,
             "RQV": fetch_value,
@@ -370,11 +378,11 @@ class websocket:
         command = data["command"]
         payload = data["payload"]
 
-        # if not command == "LOG":
-        if len(payload) < 50:
-            log.debug(f'WSKT > \"{command}\" \"{payload}\"')
-        else:
-            log.debug(f'WSKT > \"{command}\" (payload too long)')
+        if not command == "LOG":
+            if len(payload) < 50:
+                log.debug(f'WSKT > \"{command}\" \"{payload}\"')
+            else:
+                log.debug(f'WSKT > \"{command}\" (payload too long)')
 
         response = switcher[command](self, payload)
 
