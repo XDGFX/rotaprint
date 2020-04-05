@@ -447,15 +447,10 @@ document.getElementById("machine_settings").addEventListener("scroll", evt => {
         quickLinks[2].classList.remove("is-active")
         quickLinks[3].classList.remove("is-active")
     }
-
-
-
-}
-)
+})
 
 var animation_object
 function modal_animation(which, toggle) {
-
     switch (toggle) {
         case 'show':
             animation_object = lottie.loadAnimation({
@@ -490,11 +485,26 @@ function update_logs(data) {
         data = data.replace(/(?:\r\n|\r|\n)/g, "<~>")
         data = data.split("<~>")
 
-        table = "<table class=\"table\">"
+        table = "<table class=\"table log_table is-striped is-family-code\">"
 
         for (var i = 0; i < data.length - 2; i += 3) {
-            table = table + "<tr><td>" + data[i] + "</td><td>" + data[i + 1] + "</td><td>" + data[i + 2] + "</td></tr>";
+            hl = "class=\""
+
+            switch (data[i + 1]) {
+                case "WARNING":
+                    hl = hl + "has-background-warning\""
+                    break
+                case "ERROR":
+                    hl = hl + "has-background-danger has-text-white\""
+                    break
+                default:
+                    hl = ""
+                    break
+            }
+
+            table = table + "<tr " + hl + "><td>" + data[i] + "</td><td>" + data[i + 1] + "</td><td>" + data[i + 2] + "</td></tr>";
         }
+
         table = table + "</table>";
 
         if ((scroller.scrollHeight - scroller.clientHeight < scroller.scrollTop + 50) || force_scroll) {

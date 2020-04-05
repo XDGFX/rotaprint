@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>rotaprint</title>
 
-
     <link rel="stylesheet" href="node_modules/bulma/css/bulma.css">
     <link rel="stylesheet" href="node_modules/bulma-extensions/dist/css/bulma-extensions.min.css">
     <link rel="stylesheet" href="node_modules/animate.css/animate.min.css">
     <link rel="stylesheet" href="node_modules/bulma-modal-fx/dist/css/modal-fx.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap">
     <link rel="stylesheet" href="custom.css">
 
     <script defer src="node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
@@ -32,8 +32,15 @@
             </p>
         </span></div>
 
-    <button id="logs_quickview_button" class="button is-primary" data-show="quickview" data-target="logs_quickview"
-        onclick="update_logs('FORCE')"></button>
+    <!-- <button id="logs_quickview_button" class="button fas fa-cogs fa-2x icon_button" data-show="quickview"
+        data-target="logs_quickview" onclick="update_logs('FORCE')"></button> -->
+
+    <button id="logs_quickview_button" class="button is-medium" data-show="quickview" data-target="logs_quickview"
+        onclick="update_logs('FORCE')">
+        <span class="icon is-small">
+            <i class="fas fa-stream"></i>
+        </span>
+    </button>
 
     <!-- MAIN SECTION -->
     <section class="section">
@@ -41,7 +48,7 @@
             <!-- Level left -->
             <div class="level-left">
                 <figure class="image is-64x64">
-                    <img src="branding/logo_option3.png">
+                    <img src="branding/logo_option3.svg">
                 </figure>
                 <div class="container" style="padding-left: 1em; top: -4px;">
                     <p class="title">rotaprint</p>
@@ -52,12 +59,7 @@
             <!-- Level right -->
             <div class="level-right">
                 <div class="container">
-                    <button onclick="show_settings()" class="button">
-                        <span class="icon">
-                            <i class="fas fa-cogs"></i>
-                        </span>
-                        <span>Settings</span>
-                    </button>
+                    <i class="fas fa-cogs fa-2x icon_button" onclick="show_settings()"></i>
                 </div>
             </div>
         </nav>
@@ -243,9 +245,9 @@
 
 
         <div id="logs_quickview" class="quickview">
-            <header class="quickview-header">
-                <p class="title">Logs</p>
-                <span class="delete" data-dismiss="quickview"></span>
+            <header class="modal-card-head">
+                <p class="modal-card-title">Logs</p>
+                <button class="delete" data-dismiss="quickview"></button>
             </header>
 
             <div class="quickview-body">
@@ -259,7 +261,8 @@
                         checked="checked" autocomplete="off" onchange="update_logs('FORCE')">
                     <label for="logs_auto_update">Auto update</label>
                 </div>
-            </footer>
+        </div>
+        </footer>
         </div>
 
     </section>

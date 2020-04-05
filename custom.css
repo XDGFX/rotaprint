@@ -2,6 +2,11 @@ html, .section, .quickview-body {
 	scroll-behavior: smooth
 }
 
+/* Fonts and custom Bulma */
+.is-family-code, code {
+  font-family: 'Roboto Mono', monospace !important;
+}
+
 /* Used to display X if page does not load */
 .pageloader.is-stopped::after{
     display: inline-block;
@@ -80,4 +85,42 @@ input[type=number] {
 /* Increase spacing in settings */
 .field:not(:last-child) {
   margin-bottom: 2rem
+}
+
+.icon_button {
+  cursor:pointer;
+  color: rgba(10, 10, 10, 0.2);
+}
+
+.icon_button:hover {
+  color: rgba(10, 10, 10, 0.3);
+}
+
+.icon_button:active {
+  color: rgba(10, 10, 10, 0.4);
+}
+
+.log_table td {
+  vertical-align: middle;
+  border: 0;
+}
+
+.menu-list a.is-active {
+  background-color: #f14668
+}
+
+#logs_quickview_button {
+  position: absolute;
+  top: calc(50% - 12px);
+  right: 48px;
+  opacity: 20%;
+  border: 0;
+}
+
+#logs_quickview_button:hover {
+  opacity: 30%;
+}
+
+#logs_quickview_button:active {
+  opacity: 40%;
 }

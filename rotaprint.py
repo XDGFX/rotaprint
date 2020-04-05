@@ -50,7 +50,7 @@ from json import dumps, loads
 
 def setup_log():
     # Create normal logger
-    log = logging.getLogger("logger")
+    log = logging.getLogger("rotaprint")
     log.setLevel(logging.DEBUG)
 
     # Create variable logger for GUI
@@ -58,7 +58,7 @@ def setup_log():
     ch = logging.StreamHandler(log_capture_string)
     ch.setLevel(logging.DEBUG)
     formatter = logging.Formatter(
-        '%(asctime)s<~>%(levelname)s<~>%(message)s')
+        '%(asctime)s<~>%(levelname)s<~>%(message)s', '%H:%M:%S')
     ch.setFormatter(formatter)
     log.addHandler(ch)
 
@@ -282,8 +282,8 @@ class websocket:
 
         asyncio.set_event_loop(asyncio.new_event_loop())
         server = websockets.serve(listener, 'localhost', 8765, max_size=None)
-        log.warning("No file size limit set on websocket connection")
-        log.warning("This may cause issues when trying to upload large files")
+        log.warning(
+            "No file size limit set on websocket connection. This may cause issues when trying to upload large files.")
 
         asyncio.get_event_loop().run_until_complete(server)
         asyncio.get_event_loop().run_forever()
@@ -380,17 +380,17 @@ class websocket:
 
         if not command == "LOG":
             if len(payload) < 50:
-                log.debug(f'WSKT > \"{command}\" \"{payload}\"')
+                log.debug(f'WSKT > {command} \"{payload}\"')
             else:
-                log.debug(f'WSKT > \"{command}\" (payload too long)')
+                log.debug(f'WSKT > {command} (payload too long)')
 
         response = switcher[command](self, payload)
 
         if not command == "LOG":
             if len(response) < 50:
-                log.debug(f'WSKT < \"{command}\" \"{response}\"')
+                log.debug(f'WSKT < {command} \"{response}\"')
             else:
-                log.debug(f'WSKT < \"{command}\" (payload too long)')
+                log.debug(f'WSKT < {command} (payload too long)')
 
         return payloader(command, response)
 
@@ -482,7 +482,7 @@ class grbl:
             connected = True
 
         except Exception:
-            log.error("Unable to connect to printer", exc_info=True)
+            log.error("Unable to connect to printer!")
 
     def clear_lockout(self):
         log.warning("Lockout error detected! Overriding...")
