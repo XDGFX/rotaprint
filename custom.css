@@ -7,6 +7,18 @@ html, .section, .quickview-body {
   font-family: 'Roboto Mono', monospace !important;
 }
 
+/* Selection colour */
+::-moz-selection { /* Code for Firefox */
+  color: white;
+  background: #f14668;
+}
+
+::selection {
+  color: white;
+  background: #f14668;
+}
+
+/* Pageloader */
 /* Used to display X if page does not load */
 .pageloader.is-stopped::after{
     display: inline-block;
@@ -115,6 +127,7 @@ input[type=number] {
   right: 48px;
   opacity: 20%;
   border: 0;
+  z-index: 2;
 }
 
 #logs_quickview_button:hover {

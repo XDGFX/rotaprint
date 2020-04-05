@@ -6,3 +6,7 @@ grbl-1.1h/*
 !grbl-1.1h/simport.sh
 rotaprint.db
 .DS_Store
+
+tests/js/*
+tests/three/OrbitControls.js
+tests/three/three.js

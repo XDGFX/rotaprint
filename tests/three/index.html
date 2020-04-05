@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>My first three.js app</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="three.js"></script>
+    <script src="OrbitControls.js"></script>
+    <script>
+        // Scene and camera
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+
+        // Renderer
+        var renderer = new THREE.WebGLRenderer({
+            antialias: true,
+            alpha: true,
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+
+        // Geometry & Materials
+        const cylRadius = 2;
+        const cylHeight = 5;
+        {
+            const radialSegments = 100;
+            const heightSegments = 100;
+            const openEnded = true;
+            var geometry = new THREE.CylinderGeometry(
+                cylRadius, cylRadius, cylHeight, radialSegments, heightSegments, openEnded);
+        }
+
+        var textureName = "/textures/beam_wall_01_"
+        var colourMap = new THREE.TextureLoader().load(textureName + "diff_4k.jpg");
+        var normalMap = new THREE.TextureLoader().load(textureName + "nor_4k.jpg");
+        var aoMap = new THREE.TextureLoader().load(textureName + "ao_4k.jpg");
+        var bumpMap = new THREE.TextureLoader().load(textureName + "disp_4k.jpg");
+
+        colourMap.repeat.set(cylHeight * 4, 4)
+        colourMap.wrapS = colourMap.wrapT = normalMap.wrapS = normalMap.wrapT = aoMap.wrapS = aoMap.wrapT = bumpMap.wrapS = bumpMap.wrapT = THREE.RepeatWrapping;
+        colourMap.rotation = Math.PI / 2
+        // normalMap.repeat.set(16, 16)
+
+        var material = new THREE.MeshStandardMaterial({
+            // color: 0xf9e9cf,
+            roughness: 0.8,
+            metalness: 0.1,
+            // clearcoat: 0.5,
+            // clearcoatRoughness: 0.11,
+            map: colourMap,
+            normalMap: normalMap,
+            bumpMap: bumpMap,
+            bumpScale: 0.02,
+            // displacementMap: bumpMap,
+            // displacementScale: 0.1,
+            aoMap: aoMap,
+            aoMapIntensity: 0.01,
+            // flatShading: true,
+        });
+
+
+        var shape = new THREE.Mesh(geometry, material);
+        scene.add(shape);
+
+
+        // Lighting
+        {
+            const skyColor = 0xFFFFFF;  // light blue
+            const groundColor = 0xFFFFFF;  // brownish orange
+            const intensity = 0.7;
+            light = new THREE.HemisphereLight(skyColor, groundColor, intensity);
+            scene.add(light);
+        }
+
+        {
+            const color = 0xFFFFFF;
+            const intensity = 0.6;
+            const light = new THREE.DirectionalLight(color, intensity);
+            light.position.set(-1, 2, 4);
+            scene.add(light);
+        }
+
+        {
+            const color = 0xFFFFFF;
+            const intensity = 0.4;
+            const light = new THREE.DirectionalLight(color, intensity);
+            light.position.set(1, 0.5, -2);
+            scene.add(light);
+        }
+
+        // Camera controls
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        // controls.autoRotate = true;
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        // controls.enableZoom = false;
+        controls.enablePan = false;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1;
+        controls.minPolarAngle = Math.PI / 2 - 0.1;
+        controls.rotateSpeed = 0.5;
+        controls.update();
+
+
+        camera.position.set(cylRadius * 4, 0, 0);
+        // camera.rotation.y = Math.PI / 4
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        };
+        animate();
+
+        renderer.render(scene, camera);
+
+    </script>
+</body>
+
+</html>

@@ -8,6 +8,7 @@ Proprietary and confidential
 Written by Callum Morrison <callum.morrison@mac.com>, 2020
 """
 
+import http.server
 import socketserver
 import serial
 import time
@@ -113,8 +114,6 @@ class webserver:
         log.info("Accessible at http://localhost:8080")
 
     def run(self):
-        import http.server
-
         PORT = 8080
         Handler = http.server.SimpleHTTPRequestHandler
 

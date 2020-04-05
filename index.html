@@ -19,18 +19,19 @@
     <script src="node_modules/bulma-extensions/bulma-quickview/dist/js/bulma-quickview.min.js"></script>
     <script defer src="main.js"></script>
 
-    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+    <link rel="icon" href="favicon.png" type="image/x-icon">
 </head>
 
 <body>
     <!-- OVERLAYS -->
-    <div id="pageloader" class="pageloader is-active">
+    <div id="pageloader" class="pageloader is-active is-danger">
         <span class="title">
-            <p id="pageloader_title">
+            <p id="pageloader_title" class="has-text-weight-normal is-size-6">
                 Connecting to backend...
             </p>
-        </span></div>
+        </span>
+    </div>
 
     <!-- <button id="logs_quickview_button" class="button fas fa-cogs fa-2x icon_button" data-show="quickview"
         data-target="logs_quickview" onclick="update_logs('FORCE')"></button> -->
@@ -68,7 +69,7 @@
         <div class="container">
             <div class="columns is-centered">
                 <div class="column is-narrow">
-                    <div class="file has-name is-boxed is-primary">
+                    <div class="file has-name is-boxed is-danger">
                         <label class="file-label">
                             <input id="gcode_uploader" class="file-input" type="file">
                             <span class="file-cta">
@@ -89,9 +90,39 @@
 
             <!-- PRIMARY SETTINGS -->
             <div class="box">
-                <input id="switch_check_mode" type="checkbox" class="switch is-rounded">
-                <label for="switch_check_mode">Check mode</label>
-                <a onclick="show_help('modal_check_mode'), modal_animation('animation_check_mode', 'show')">?</a>
+                <!-- <h1 class="heading">General Settings</h1> -->
+                <div class="columns is-vcentered">
+                    <div class="column">
+
+                    </div>
+                    <div class="column">
+                        <div class="field ">
+                            <label class="label">Check mode</label>
+                            <input id="switch_check_mode" type="checkbox" class="switch is-rounded">
+                            <label for="switch_check_mode"></label>
+                            <a
+                                onclick="show_help('modal_check_mode'), modal_animation('animation_check_mode', 'show')">?</a>
+                        </div>
+
+                        <div class="field ">
+                            <label class="label">Part Radius</label>
+                            <div class="field has-addons" style="margin: 0;">
+                                <p class="control">
+                                    <input id="radius" class="input" type="number" style="width: 100px;">
+                                </p>
+                                <p class="control">
+                                    <a class="button is-static" style="width: 60px;">mm</a>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- <p class="help">Default radius (Y direction) of part</p> -->
+                    </div>
+                </div>
+
+                <div class="is-divider" data-content="Advanced Settings"></div>
+
+
                 <input class="input" type="text" id="custom_command" onkeydown="return send_custom_code(event)"
                     placeholder="Custom command"><br>
             </div>
@@ -236,7 +267,7 @@
                     <p>Part Length: <code>100</code> > <code>100980</code></p> -->
                 </section>
                 <footer class="modal-card-foot">
-                    <button id="confirm_settings_button" disabled class="button is-success"
+                    <button id="confirm_settings_button" disabled class="button is-danger"
                         onclick="send_new_settings('CONFIRM'); hide_help(this.parentElement.parentElement); hide_settings()"></button>
                     <button class="button" onclick="hide_help(this.parentElement.parentElement)">Cancel</button>
                 </footer>
