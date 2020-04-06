@@ -23,32 +23,6 @@ import io
 from json import dumps, loads
 
 
-# def get_args():
-#     # Setup argument parser
-#     import argparse
-
-#     desc = "Print on cylindrical components!"
-#     parser = argparse.ArgumentParser(description=desc)
-
-#     parser.add_argument('gcode', type=str, help='Input GCODE file')
-#     parser.add_argument('length', type=float,
-#                         help='Length of part to print on')
-#     parser.add_argument('radius', type=float,
-#                         help='Radius of part to print on')
-#     parser.add_argument(
-#         '-p', '--port', type=str, help='Serial port to connect to. See: bit.ly/2U8aFvV',
-#         default='grbl-1.1h/ttyGRBL')
-#     parser.add_argument('-v', '--verbose',
-#                         help='Show verbose information', action='store_true')
-#     parser.add_argument('-d', '--debug',
-#                         help='Show debug information', action='store_true')
-#     parser.add_argument(
-#         '-c', '--check', help='Check GCODE only, do not run', action='store_true')
-
-#     args = parser.parse_args()
-#     return args
-
-
 def setup_log():
     # Create normal logger
     log = logging.getLogger("rotaprint")
@@ -70,11 +44,14 @@ def setup_log():
     # if args.debug:
     logging.basicConfig(format='%(name)-12s: %(levelname)-8s %(message)s')
 
+    log.info("Successfully setup logging")
+
     return log, log_capture_string
 
 
 def g0_g1_conversion(gcode):
     # Convert all GCODE where printing (indicated by a feedrate change command) to G1
+    log.info("Converting print GCODE to G1")
     printing = 0
 
     for idx, command in enumerate(gcode):
@@ -91,18 +68,6 @@ def g0_g1_conversion(gcode):
     return gcode
 
 
-def payloader(command, payload):
-    # Used to combine a command and payload into a single JSON style string
-    data = {
-        "command": str(command),
-        "payload": str(payload)
-    }
-
-    # Convert to JSON string and return
-    data = dumps(data)
-    return data
-
-
 class webserver:
     def start(self):
         log.info("Initialising webserver")
@@ -110,8 +75,7 @@ class webserver:
         webserverThread = threading.Thread(target=self.run)
         webserverThread.daemon = True
         webserverThread.start()
-        log.info("Webserver initialised")
-        log.info("Accessible at http://localhost:8080")
+        log.info("Webserver initialised, Accessible at http://localhost:8080")
 
     def run(self):
         PORT = 8080
@@ -209,14 +173,17 @@ class database:
 
     def get_settings(self):
         # Select and retrieve all settings
+        log.debug("Fetching settings from database...")
         self.cursor.execute('SELECT * FROM \'settings\'')
         settings = dict(self.cursor.fetchall())
         return settings
 
     def set_settings(self, settings):
+        log.debug("Updating database settings...")
         self.cursor.executemany(
             'UPDATE \'settings\' SET value=? WHERE parameter=?', settings)
         self.connection.commit()
+        log.debug("Database successfully updated")
 
 
 class websocket:
@@ -231,53 +198,14 @@ class websocket:
 
     def listen(self):
         # Listen always for messages over websocket
-
         async def listener(websocket, path):
             # hold = False
             # buffer = list()
             while True:
-                # Listen for new messages
+                # Listen for new messages, and send incoming to the handler TODO make threaded
                 data = await websocket.recv()
                 response = self.handler(data)
                 await websocket.send(response)
-
-                # message = message.split("~")
-
-                # if message == "BFH":
-                #     # Buffer hold condition
-                #     hold = True
-                #     buffer = list()
-                # elif message == "BFR":
-                #     # Buffer release condition
-                #     hold = False
-                # elif message == "GCD":
-                #     # Load next message and update GCODE
-                #     global gcode
-                #     log.info("GCODE receiving...")
-                #     gcode = await websocket.recv()
-                #     gcode = [line.strip()
-                #              for line in gcode.decode().split("\n")]
-                #     log.info("GCODE successfully received")
-                #     log.debug(f'WSKT < GCD~done')
-                #     await websocket.send("GCD~done")
-                #     continue
-
-                # if hold:
-                #     buffer.append(message)
-                # else:
-                #     if buffer:
-                #         # Buffer has data
-                #         output = self.handler(buffer)
-                #         log.debug(f'WSKT < {output}')
-                #         await websocket.send(output)
-
-                #         # Clear buffer
-                #         buffer = list()
-                #     else:
-                #         # Normal message (convert to list)
-                #         output = self.handler([message])
-                #         log.debug(f'WSKT < {output}')
-                #         await websocket.send(output)
 
         asyncio.set_event_loop(asyncio.new_event_loop())
         server = websockets.serve(listener, 'localhost', 8765, max_size=None)
@@ -287,7 +215,19 @@ class websocket:
         asyncio.get_event_loop().run_until_complete(server)
         asyncio.get_event_loop().run_forever()
 
+    def payloader(self, command, payload):
+        # Used to combine a command and payload into a single JSON style string
+        data = {
+            "command": str(command),
+            "payload": str(payload)
+        }
+
+        # Convert to JSON string and return
+        data = dumps(data)
+        return data
+
     def handler(self, data):
+        # Handles incoming commands
         def emergency_stop(self, payload):
             print("EST")
 
@@ -310,6 +250,9 @@ class websocket:
             pass
 
         def database_set(self, payload):
+            # Update a database setting
+
+            # Load JSON string input to Python list
             settings = loads(payload)
 
             # Convert to (reversed) tuple for SQL query
@@ -321,6 +264,7 @@ class websocket:
             pass
 
         def receive_gcode(self, payload):
+            # Receive gcode, and load into global variable
             global gcode
             gcode = [line.strip() for line in payload.split("\n")
                      if not line.startswith('#')]
@@ -331,12 +275,14 @@ class websocket:
             # Send all supplied GCODE to printer
             if gcode == "":
                 log.error("No GCODE supplied; cannot print")
-                return "No gcode"
+                return "NO GCODE"
             else:
+                log.info("Sending gcode to printer...")
                 g.send(gcode)
 
         def fetch_settings(self, payload):
             # Return all database settings in JSON format
+            log.debug("Retrieving database settings")
             current_settings = db.get_settings()
             return dumps(current_settings)
 
@@ -348,10 +294,12 @@ class websocket:
             return str(variable[payload])
 
         def reconnect_printer(self, payload):
+            # Reconnect to printer incase of issue
             g.reconnect()
             return "DONE"
 
         def return_logs(self, payload):
+            # Return current log data to frontend
             log_contents = logs.getvalue()
             return log_contents
 
@@ -373,6 +321,7 @@ class websocket:
             "LOG": return_logs,
         }
 
+        # Separate JSON string into command and payload
         data = loads(data)
         command = data["command"]
         payload = data["payload"]
@@ -381,17 +330,18 @@ class websocket:
             if len(payload) < 50:
                 log.debug(f'WSKT > {command} \"{payload}\"')
             else:
-                log.debug(f'WSKT > {command} (payload too long)')
+                log.debug(f'WSKT > {command} (long payload)')
 
+        # Call respective command using switcher
         response = switcher[command](self, payload)
 
         if not command == "LOG":
             if len(response) < 50:
                 log.debug(f'WSKT < {command} \"{response}\"')
             else:
-                log.debug(f'WSKT < {command} (payload too long)')
+                log.debug(f'WSKT < {command} (long payload)')
 
-        return payloader(command, response)
+        return self.payloader(command, response)
 
 
 class grbl:
@@ -399,49 +349,12 @@ class grbl:
     Object for control and configuration of grbl firmware and connection.
     """
 
-    # GRBL settings (see: https://github.com/gnea/grbl/wiki/Grbl-v1.1-Configuration)
-    # Unimportant settings are commented out, program will only update altered settings
-    # settings = {
-    #     "$0": 10,       # Length of step pulse, microseconds
-    #     "$1": 255,      # Step idle delay, milliseconds
-    #     # "$2": 0,        # Step port invert, mask
-    #     "$3": 0,        # Direction port invert, mask
-    #     "$4": 0,        # Step enable invert, boolean
-    #     "$5": 0,        # Limit pins invert, boolean
-    #     # "$6": 0,        # Probe pin invert, boolean
-    #     "$10": 1,       # Status report, mask
-    #     # "$11": 0.010,   # Junction deviation, mm
-    #     # "$12": 0.002,   # Arc tolerance, mm
-    #     # "$13": 0,       # Report inches, boolean
-    #     "$20": 0,       # Soft limits, boolean !!! Should be enabled for real use
-    #     # "$21": 0,       # Hard limits, boolean
-    #     "$22": 1,       # Homing cycle, boolean
-    #     "$23": 0,       # Homing dir invert, mask
-    #     "$24": 25,      # Homing feed, mm/min
-    #     "$25": 500,     # Homing seek, mm/min
-    #     "$26": 25,      # Homing debounce, milliseconds
-    #     # "$27": 1,       # Homing pull-off, mm
-    #     # "$30": 1000,    # Max spindle speed, RPM
-    #     # "$31": 0,       # Min spindle speed, RPM
-    #     "$32": 1,       # Laser mode, boolean
-    #     # ---
-    #     "$100": 250,    # X steps/mm
-    #     "$101": 250,    # Y steps/mm  TODO VARIES
-    #     "$102": 250,    # Z steps/mm
-    #     "$110": 500,    # X Max rate, mm/min
-    #     "$111": 500,    # Y Max rate, mm/min  TODO VARIES
-    #     "$112": 500,    # Z Max rate, mm/min
-    #     "$120": 10,     # X Acceleration, mm/sec^2
-    #     "$121": 10,     # Y Acceleration, mm/sec^2
-    #     "$122": 10,     # Z Acceleration, mm/sec^2
-    #     "$130": 200,    # X Max travel, mm  TODO VARIES
-    #     "$131": 200,    # Y Max travel, mm  TODO VARIES
-    #     "$132": 200  # Z Max travel, mm
-    # }
-
     startup = {
         "$N0": ""  # GCODE to run on every startup of grbl  TODO
     }
+
+    # Checkmode toggle
+    check = False
 
     def __init__(self):
         # Get GRBL settings
@@ -451,6 +364,7 @@ class grbl:
                          for x in self.settings if x.find("$") >= 0}
 
     def reconnect(self):
+        log.debug("Reconnecting to printer...")
         global s
         global connected
 
@@ -465,7 +379,7 @@ class grbl:
         log.info("Connecting to printer...")
         try:
             # Connect to serial
-            log.info(f"Connecting on port {self.port}...")
+            log.debug(f"Connecting on port {self.port}...")
             s = serial.Serial(self.port, 115200, timeout=1)
             log.info("Connection success!")
 
@@ -484,7 +398,7 @@ class grbl:
             log.error("Unable to connect to printer!")
 
     def clear_lockout(self):
-        log.warning("Lockout error detected! Overriding...")
+        log.warning("Lockout error detected! Attempting to override...")
         log.debug("GRBL < $X")
         s.write("$X".encode())
 
@@ -504,19 +418,22 @@ class grbl:
 
         timeout_counter = 0
         while not temp_out.startswith("$"):
+            # Wait for settings to start receiving
 
             if timeout_counter > 10:
                 # Timeout condition
                 log.error("Printer communication timeout while reading settings")
                 log.info("Will reconnect in an attempt to fix")
-                log.debug("Disconnecting...")
                 self.reconnect()
                 log.warning(
-                    "Attempting to continue by forcing settings update")
+                    "Attempting to continue by forcing settings update, \
+                    if this doesn't work restart the machine and try again!")
                 force_settings = True
                 break
 
             if temp_out.find('error:9') >= 0:
+                log.warning(
+                    "Lockout error detected while attempting to send settings!")
                 self.clear_lockout()
             elif temp_out.find('error') >= 0:
                 log.debug(f"GRBL > {temp_out}")
@@ -555,6 +472,8 @@ class grbl:
 
         # Get required settings from Database
         self.settings = db.get_settings()
+
+        # Convert received settings to directionary
         self.settings = {x: self.settings[x]
                          for x in self.settings if x.find("$") >= 0}
 
@@ -610,15 +529,23 @@ class grbl:
         log.debug("GRBL < $C")
         s.write('$C\n')
 
+        # Invert checkmode variable
+        self.check != self.check
+
+        if self.check:
+            log.info("Check mode enabled!")
+        else:
+            log.info("Check mode disabled!")
+
         while True:
             out = s.readline().strip()  # Wait for grbl response with carriage return
             if out.find('error') >= 0:
                 log.debug(f"GRBL > {out}")
-                log.error("Failed to set Grbl check-mode. Aborting...")
-                quit()
+                log.error(
+                    "Failed to set Grbl check-mode. Attempting to reconnect...")
+                self.reconnect()
             elif out.find('ok') >= 0:
                 log.debug(f'GRBL > {out}')
-                break
 
     def send(self, data, settings_mode=False):
         log.info("Sending data to printer...")
@@ -645,16 +572,12 @@ class grbl:
                     out = s.readline().strip().decode()
 
                     if out.find('ok') >= 0:
-
                         log.debug(f"GRBL > {str(l_count)}: {out}")
                         break
-
                     elif out.find('error') >= 0:
-
                         log.warning(f"GRBL > {str(l_count)}: {out}")
                         error_count += 1
                         break
-
                     else:
                         log.debug(f"GRBL > {out}")
         else:
@@ -682,13 +605,11 @@ class grbl:
 
                     if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
                         log.debug(f"GRBL > {out_temp}")  # Debug response
-
                     else:
                         if out_temp.find('error') >= 0:
                             error_count += 1
 
                         g_count += 1  # Iterate g-code counter
-
                         log.debug(f"GRBL > {str(g_count)}: {out_temp}")
 
                         # Delete the block character count corresponding to the last 'ok'
@@ -707,13 +628,11 @@ class grbl:
 
                 if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
                     log.debug(f"GRBL > {out_temp}")  # Debug response
-
                 else:
                     if out_temp.find('error') >= 0:
                         error_count += 1
 
                     g_count += 1  # Iterate g-code counter
-
                     log.debug(f"GRBL > {str(g_count)}: {out_temp}")
 
                     # Delete the block character count corresponding to the last 'ok'
@@ -723,35 +642,32 @@ class grbl:
         log.info(f"Time elapsed: {str(end_time-start_time)}")
         self.is_run = False
 
-        # if args.check:
-        #     log.info("Checking response...")
-        #     if error_count > 0:
-        #         log.error(
-        #             f"Check failed: {error_count} errors found! See output for details.")
-        #         quit()
-        #     else:
-        #         log.info("Check passed: No errors found in g-code program.")
-        # else:
-        log.debug(
-            "Wait until Grbl completes buffered g-code blocks before exiting.")
+        if self.check:
+            log.info("Checking response...")
+            if error_count > 0:
+                log.error(
+                    f"Check failed: {error_count} errors found! See output for details.")
+                quit()
+            else:
+                log.info("Check passed: No errors found in g-code program.")
+        else:
+            log.debug(
+                "Wait until Grbl completes buffered g-code blocks before exiting.")
 
-
-# # Get input arguments
-# args = get_args()
 
 log, logs = setup_log()
 
 
-# --- SETTINGS ---
+# --- Variable Initialisation ---
 
 # GCODE parser settings
-settings_mode = False  # Default False, must be True for settings
+# settings_mode = False  # Default False, must be True for settings
 rx_buffer_size = 128
 enable_status_reports = True  # Default True, can toggle monitoring
 report_interval = 1.0  # In seconds, if enable_status_reports is True
 gcode = ""
-s = ""
-g = ""
+s = []
+# g = ""
 connected = False  # Check whether backend is successfully connected to printer
 
 
