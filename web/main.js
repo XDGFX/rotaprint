@@ -1,9 +1,24 @@
+/* 
+ * Copyright (c) 2020
+ * This file is part of the TDCA rotary printer project.
+ * 
+ * @summary Scripts used for the front-end GUI for TDCA rotary printer.
+ * @author Callum Morrison <callum.morrison@mac.com>, 2020
+ * 
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
+
 // WEBSOCKET
-let ws = new WebSocket("ws://localhost:8765");
+// Initialise websocket
+ws = new WebSocket("ws://localhost:8765");
 response = "";
 
+// Function to call when websocket first opened
 ws.onopen = function (e) {
     console.log("[open] Connection established");
+
+    // Remove pageloader
     setTimeout(() => {
         document.getElementById("pageloader_title").innerHTML = "Connected!";
     }, 500);
@@ -12,9 +27,11 @@ ws.onopen = function (e) {
         document.getElementById("pageloader").classList.remove('is-active');
     }, 1000);
 
+    // Check connection to grbl
     check_connected()
 };
 
+// Function to call when message received by websocket
 ws.onmessage = function (event) {
     console.log(`[message] Data received from server: ${event.data}`);
     data = JSON.parse(event.data)
@@ -43,6 +60,7 @@ ws.onmessage = function (event) {
     }
 };
 
+// Function to call when websocket is closed
 ws.onclose = function (event) {
     setTimeout(() => {
         bulmaToast.toast({
@@ -402,6 +420,8 @@ function set_default(input_id) {
         "$131": 200,    // Y Max travel, mm  TODO VARIES
         "$132": 200  // Z Max travel, mm
     }
+
+    id = input_id.split("_")[1]
 
     default_value = defaults[input_id.split("_")[1]]
     element = document.getElementById(input_id)

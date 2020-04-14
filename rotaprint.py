@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 """
-Main script for running the TDCA rotary printer.
+Copyright (c) 2020
+This file is part of the TDCA rotary printer project.
 
-Copyright (C) Callum Morrison - All Rights Reserved
+Main script for running the TDCA rotary printer.
+Written by Callum Morrison <callum.morrison@mac.com>, 2020
+
 Unauthorized copying of this file, via any medium is strictly prohibited
 Proprietary and confidential
-Written by Callum Morrison <callum.morrison@mac.com>, 2020
 """
 
 import http.server
