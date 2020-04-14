@@ -1,0 +1,233 @@
+{
+    "settings": [
+        {
+            "title": "Length of Step Pulse",
+            "id": "$0",
+            "default": 10,
+            "unit": "μs",
+            "advanced": false,
+            "category": "controller",
+            "help": "Length of pulse sent to stepper motors. You want the pulses as short as the drivers can reliably recognise. If the pulses are too long, overlap between pulses can cause issues at high speeds."
+        },
+        {
+            "title": "Step Idle Delay",
+            "id": "$1",
+            "default": 255,
+            "unit": "ms",
+            "advanced": false,
+            "category": "controller",
+            "help": "Every time the printer completes a motion and comes to a stop, the stepper motors will be disabled after this delay. Lower values may help account for motors which do not like to be left on for long periods of time without doing anything. Alternatively, set to the maximum value of 255 to never disable stepper motors."
+        },
+        {
+            "title": "Step Port Invert",
+            "id": "$2",
+            "default": 0,
+            "unit": "mask",
+            "advanced": true,
+            "category": "controller",
+            "help": "Used to invert some or all stepper driver pulses. By default, a step event starts low, goes high, and then resets low again. When inverted, normal is high and pulse is low. <a onclick=\"show_help('modal_mask')\">View mask table.</a>"
+        },
+        {
+            "title": "Direction Port Invert",
+            "id": "$3",
+            "default": 0,
+            "unit": "mask",
+            "advanced": false,
+            "category": "controller",
+            "help": "Invert the direction signal for each axis. Used if one axis is reverse what is expected. <a onclick=\"show_help('modal_mask')\">View mask table.</a>"
+        },
+        {
+            "title": "Step Enable Invert",
+            "id": "$4",
+            "default": 0,
+            "unit": "bool",
+            "advanced": false,
+            "category": "controller",
+            "help": "Invert the enable pin for each axis. Used if steppers are active when they should be disabled, and vice-versa. May require a power cycle to apply."
+        },
+        {
+            "title": "Limit Pins Invert",
+            "id": "$5",
+            "default": 0,
+            "unit": "bool",
+            "advanced": false,
+            "category": "controller",
+            "help": "Control whether limit pins are held high (0) or low (1). May require a power cycle to apply."
+        },
+        {
+            "title": "Probe Pin Invert",
+            "id": "$6",
+            "default": 0,
+            "unit": "bool",
+            "advanced": true,
+            "category": "controller",
+            "help": "Control whether probe pin is held high (0) or low (1). May require a power cycle to apply."
+        },
+        {
+            "title": "Junction Deviation",
+            "id": "$11",
+            "default": 0.010,
+            "unit": "mm",
+            "advanced": true,
+            "category": "controller",
+            "help": "Used by the acceleration manager to determine input velocity upon approaching a line segment junction within the GCODE file. Higher values give faster motion through corners, while increasing the risk that steps and position are lost. If you want to speed up cornering speed, increase this number. If you are loosing steps while cornering, decrease this number."
+        },
+        {
+            "title": "Arc Tolerance",
+            "id": "$12",
+            "default": 0.002,
+            "unit": "mm",
+            "advanced": true,
+            "category": "controller",
+            "help": "The firmware converts G2 / G3 circles, arcs, and helixes as a subdivision of small lines. This value is the maximum deviation when subdividing. Supplied GCODE conversion tools do not use G2 / G3 functions, however custom GCODE might."
+        },
+        {
+            "title": "Report Unit",
+            "id": "$13",
+            "default": 0,
+            "unit": "bool",
+            "advanced": true,
+            "category": "controller",
+            "help": "Toggles between firmware reporting in mm (0) or inches (1)... if for some reason you wanted freedom units."
+        },
+        {
+            "title": "Soft Limits",
+            "id": "$20",
+            "default": 0,
+            "unit": "bool",
+            "advanced": false,
+            "category": "controller",
+            "help": "If enabled (1), firmware will check each GCODE command is within defined maximum travel limits. If a command is not within these limits, an immediate feed hold is issued, and the system alarm is activated. (0) disabled this functionality."
+        },
+        {
+            "title": "Hard limits",
+            "id": "$21",
+            "default": 0,
+            "unit": "bool",
+            "advanced": true,
+            "category": "controller",
+            "help": "Using connected limit switches, firmware will halt all motion if a switch is hit. An infinite alarm will be triggered, and a full reset will be required. Enable limits with (1) or disable with (0)"
+        },
+        {
+            "title": "Homing Cycle",
+            "id": "$22",
+            "default": 1,
+            "unit": "bool",
+            "advanced": true,
+            "category": "controller",
+            "help": "Enables (1) or disables (0) the homing cycle. Only really useful for testing and debugging, as without completing a homing cycle the firmware will not know where any of the stepper motors are."
+        },
+        {
+            "title": "Homing Direction Invert",
+            "id": "$23",
+            "default": 0,
+            "unit": "mask",
+            "advanced": false,
+            "category": "controller",
+            "help": "By default, firmware assumes all homing limit switches are in the positive direction. This will allow axes to have limit switches instead, in the negative direction. <a onclick=\"show_help('modal_mask')\">View mask table.</a>"
+        },
+        {
+            "title": "Homing Feed Rate",
+            "id": "$24",
+            "default": 25,
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "controller",
+            "help": "Slower movement speed during homing operation.</a>"
+        },
+        {
+            "title": "Homing Seek Rate",
+            "id": "$25",
+            "default": 500,
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "controller",
+            "help": "Faster movement speed during homing operation.</a>"
+        },
+        {
+            "title": "Homing Debounce",
+            "id": "$26",
+            "default": 25,
+            "unit": "ms",
+            "advanced": false,
+            "category": "controller",
+            "help": "Debounce delay when reading microswitches. Used only when homing. Set this value to whatever results in repeatable homing.</a>"
+        },
+        {
+            "title": "Homing Pull Off",
+            "id": "$27",
+            "default": 0,
+            "unit": "mm",
+            "advanced": true,
+            "category": "controller",
+            "help": "Helps when hard limits are enabled; the machine will pull off limit switches after homing by this amount. This helps prevent accidental triggering during normal operation. Make sure this value is large enough to clear the limit switch."
+        },
+        {
+            "title": "Laser Mode",
+            "id": "$32",
+            "default": 1,
+            "unit": "bool",
+            "advanced": true,
+            "category": "controller",
+            "help": "When enabled (1), machine will move continuously between consecutive G1, G2, and G3 motions. When disabled, machine will operate more like a conventional CNC machine, pausing movement to allow spindle speed changes. This should not be required."
+        },
+        {
+            "title": "Max Rate (X)",
+            "id": "$110",
+            "default": 500,
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "controller",
+            "help": "Maximum rate at which stepper motor controlling X axis will run. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+        },
+        {
+            "title": "Max Rate (Y)",
+            "id": "$111",
+            "default": 500,
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "controller",
+            "help": "Maximum rate at which stepper motor controlling Y axis will run. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+        },
+        {
+            "title": "Max Rate (Z)",
+            "id": "$112",
+            "default": 500,
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "controller",
+            "help": "Maximum rate at which stepper motor controlling Z axis will run. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+        },
+        {
+            "title": "Acceleration (X)",
+            "id": "$120",
+            "default": 10,
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "controller",
+            "help": "Maximum acceleration of X axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+        },
+        {
+            "title": "Acceleration (Y)",
+            "id": "$121",
+            "default": 10,
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "controller",
+            "help": "Maximum acceleration of Y axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+        },
+        {
+            "title": "Acceleration (Z)",
+            "id": "$122",
+            "default": 10,
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "controller",
+            "help": "Maximum acceleration of Z axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+        }
+    ],
+    "sections": [
+        "controller",
+        "movement"
+    ]
+}

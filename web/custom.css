@@ -19,11 +19,14 @@ html, .section, .quickview-body {
 }
 
 /* Pageloader */
+.pageloader {
+  background-color: white;
+}
 /* Used to display X if page does not load */
-.pageloader.is-stopped::after{
+.pageloader.is-stopped::after {
     display: inline-block;
     content: "\00d7";
-    color: white;
+    color: black;
     scale: 5;
     top:50%;
     left:50%;
@@ -33,6 +36,14 @@ html, .section, .quickview-body {
     height: 1em;
     -webkit-animation:loader-figure 0s infinite cubic-bezier(.215,.61,.355,1);
     animation:loader-figure 0s infinite cubic-bezier(.215,.61,.355,1)
+}
+
+.pageloader::after {
+  border: 0 solid #000
+}
+
+.pageloader .title {
+  color: black;
 }
 
 /* Used to configure overlay screens */

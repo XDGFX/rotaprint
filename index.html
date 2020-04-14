@@ -6,26 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>rotaprint</title>
 
-    <link rel="stylesheet" href="node_modules/bulma/css/bulma.css">
+    <link rel="stylesheet" href="web/styles.css">
     <link rel="stylesheet" href="node_modules/bulma-extensions/dist/css/bulma-extensions.min.css">
     <link rel="stylesheet" href="node_modules/animate.css/animate.min.css">
     <link rel="stylesheet" href="node_modules/bulma-modal-fx/dist/css/modal-fx.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap">
-    <link rel="stylesheet" href="custom.css">
+    <link rel="stylesheet" href="web/custom.css">
 
-    <script defer src="node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
+    <!-- <script defer src="node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script> -->
     <script src="node_modules/bulma-toast/dist/bulma-toast.min.js"></script>
     <script src="node_modules/lottie-web/build/player/lottie.min.js"></script>
     <script src="node_modules/bulma-extensions/bulma-quickview/dist/js/bulma-quickview.min.js"></script>
-    <script defer src="main.js"></script>
+    <script src="node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
+    <script defer src="web/main.js"></script>
 
-    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
-    <link rel="icon" href="favicon.png" type="image/x-icon">
+    <link rel="shortcut icon" href="web/favicon.png" type="image/x-icon">
+    <link rel="icon" href="web/favicon.png" type="image/x-icon">
 </head>
 
 <body>
     <!-- OVERLAYS -->
-    <div id="pageloader" class="pageloader is-active is-danger">
+    <div id="pageloader" class="pageloader is-active">
         <span class="title">
             <p id="pageloader_title" class="has-text-weight-normal is-size-6">
                 Connecting to backend...
@@ -310,7 +310,7 @@
                         <p class="menu-label"><b>General</b></p>
                         <ul id="menu" class="menu-list">
                             <li><a class="menu_button is-active" href="#settings_connection">Printer Connection</a></li>
-                            <li><a class="menu_button" href="#settings_defaults">Default Settings</a></li>
+                            <li><a class="menu_button" href="#settings_default">Default Settings</a></li>
                             <li><a class="menu_button" href="#settings_controller">Controller Settings</a></li>
                             <li><a class="menu_button" href="#settings_movement">Movement Settings</a></li>
                         </ul>
@@ -366,7 +366,7 @@
                     </div>
 
                     <br>
-                    <h2 id="settings_defaults" class="heading">Default Settings</h2>
+                    <h2 id="settings_default" class="heading">Default Settings</h2>
                     <br>
                     <div class="field">
                         <label class="label">Part Length <code>length</code></label>
@@ -415,679 +415,62 @@
                     <br>
                     <h2 id="settings_controller" class="heading">Controller Settings</h2>
                     <br>
-                    <div class="field">
-                        <label class="label">Length of Step Pulse <code>$0</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$0" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">μs</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$0')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Length of pulse sent to stepper motors. You want the pulses as short as
-                            the
-                            drivers can reliably recognise. If the pulses are too long, overlap between pulses
-                            can
-                            cause
-                            issues at high speeds.</p>
-                    </div>
 
-                    <div class="field">
-                        <label class="label">Step Idle Delay <code>$1</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$1" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">ms</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$1')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Every time the printer completes a motion and comes to a stop, the
-                            stepper
-                            motors will be disabled after this delay. Lower values may help account for motors
-                            which
-                            do not like to be left on for long periods of time without doing anything.
-                            Alternatively, set to the maximum value of 255 to never disable stepper motors.</p>
-                    </div>
+                    <div id="settings_template_div"></div>
+                    <script>
+                        // Select div to insert content to
+                        div = document.querySelector("#settings_template_div")
 
-                    <div class="field">
-                        <fieldset disabled class="advanced_setting">
-                            <label class="label">Step Port Invert <code>$2</code></label>
-                            <div class="columns" style="margin: 0;">
-                                <div class="column" style="padding: 0;">
-                                    <div class="field has-addons" style="margin: 0;">
-                                        <p class="control">
-                                            <input id="setting_$2" class="input" type="number" style="width: 100px;"
-                                                oninput="check_changed(this)">
-                                        </p>
-                                        <p class="control">
-                                            <a class="button is-static" style="width: 60px;">mask</a>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="column" style="padding: 0;">
-                                    <p class="control">
-                                        <button disabled onclick="set_default('setting_$2')"
-                                            class="button is-pulled-right advanced_setting">Default</button>
-                                    </p>
-                                </div>
-                            </div>
-                            <p class="help">Used to invert some or all stepper driver pulses. By default, a step
-                                eventstarts low, goes high, and then resets low again. When inverted, normal is high and
-                                pulse is low. <a onclick="show_help('modal_mask')">View mask table.</a></p>
-                        </fieldset>
-                    </div>
+                        // Load data in async function so it can be awaited
+                        load_data = async () => {
+                            // Load standard HTML setting
+                            response = await fetch("web/templates/setting.html")
+                            html_settings = await response.text()
 
-                    <div class="field">
-                        <label class="label">Direction Port Invert <code>$3</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$3" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">mask</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$3')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Invert the direction signal for each axis. Used if one axis is reverse what is
-                            expected. <a onclick="show_help('modal_mask')">View mask table.</a></p>
-                    </div>
+                            // Load advanced HTML setting
+                            response = await fetch("web/templates/setting_advanced.html")
+                            html_settings_advanced = await response.text()
 
-                    <div class="field">
-                        <label class="label">Step Enable Invert <code>$4</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$4" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">bool</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$4')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Invert the enable pin for each axis. Used if steppers are active when they
-                            should be disabled, and vice-versa. May require a power cycle to apply.</p>
-                    </div>
+                            // Load and parse settings json
+                            response = await fetch("web/content/settings.json")
+                            settings_json = await response.text()
+                            settings_json = JSON.parse(settings_json)
 
-                    <div class="field">
-                        <label class="label">Limit Pins Invert <code>$5</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$5" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">bool</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$5')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Control whether limit pins are held high (0) or low (1). May require a power
-                            cycle to apply.</p>
-                    </div>
+                            return [html_settings, html_settings_advanced, settings_json]
+                        }
 
-                    <div class="field">
-                        <fieldset disabled class="advanced_setting">
-                            <label class="label">Probe Pin Invert <code>$6</code></label>
-                            <div class="columns" style="margin: 0;">
-                                <div class="column" style="padding: 0;">
-                                    <div class="field has-addons" style="margin: 0;">
-                                        <p class="control">
-                                            <input id="setting_$6" class="input" type="number" style="width: 100px;"
-                                                oninput="check_changed(this)">
-                                        </p>
-                                        <p class="control">
-                                            <a class="button is-static" style="width: 60px;">bool</a>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="column" style="padding: 0;">
-                                    <p class="control">
-                                        <button disabled onclick="set_default('setting_$6')"
-                                            class="button is-pulled-right advanced_setting">Default</button>
-                                    </p>
-                                </div>
-                            </div>
-                            <p class="help">Control whether probe pin is held high (0) or low (1). May require a power
-                                cycle to apply.</p>
-                        </fieldset>
-                    </div>
+                        // Insert settings html into div
+                        async function update_settings() {
+                            await load_data();
 
-                    <div class="field">
-                        <fieldset disabled class="advanced_setting">
-                            <label class="label">Junction Deviation <code>$11</code></label>
-                            <div class="columns" style="margin: 0;">
-                                <div class="column" style="padding: 0;">
-                                    <div class="field has-addons" style="margin: 0;">
-                                        <p class="control">
-                                            <input id="setting_$11" class="input" type="number" style="width: 100px;"
-                                                oninput="check_changed(this)">
-                                        </p>
-                                        <p class="control">
-                                            <a class="button is-static" style="width: 60px;">mm</a>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="column" style="padding: 0;">
-                                    <p class="control">
-                                        <button disabled onclick="set_default('setting_$11')"
-                                            class="button is-pulled-right advanced_setting">Default</button>
-                                    </p>
-                                </div>
-                            </div>
-                            <p class="help">Used by the acceleration manager to determine input velocity upon
-                                approaching a line segment junction within the GCODE file. Higher values give faster
-                                motion through corners, while increasing the risk that steps and position are lost. If
-                                you want to speed up cornering speed, increase this number. If you are loosing steps
-                                while cornering, decrease this number.</p>
-                        </fieldset>
-                    </div>
+                            html = ""
 
-                    <div class="field">
-                        <fieldset disabled class="advanced_setting">
-                            <label class="label">Arc Tolerance <code>$12</code></label>
-                            <div class="columns" style="margin: 0;">
-                                <div class="column" style="padding: 0;">
-                                    <div class="field has-addons" style="margin: 0;">
-                                        <p class="control">
-                                            <input id="setting_$12" class="input" type="number" style="width: 100px;"
-                                                oninput="check_changed(this)">
-                                        </p>
-                                        <p class="control">
-                                            <a class="button is-static" style="width: 60px;">mm</a>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="column" style="padding: 0;">
-                                    <p class="control">
-                                        <button disabled onclick="set_default('setting_$12')"
-                                            class="button is-pulled-right advanced_setting">Default</button>
-                                    </p>
-                                </div>
-                            </div>
-                            <p class="help">The firmware converts G2 / G3 circles, arcs, and helixes as a subdivision of
-                                small lines. This value is the maximum deviation when subdividing. Supplied GCODE
-                                conversion tools do not use G2 / G3 functions, however custom GCODE might.</p>
-                        </fieldset>
-                    </div>
+                            // Loop through setttings JSON and create HTML file
+                            for (item of settings_json["settings"]) {
 
-                    <div class="field">
-                        <fieldset disabled class="advanced_setting">
-                            <label class="label">Report Unit <code>$13</code></label>
-                            <div class="columns" style="margin: 0;">
-                                <div class="column" style="padding: 0;">
-                                    <div class="field has-addons" style="margin: 0;">
-                                        <p class="control">
-                                            <input id="setting_$13" class="input" type="number" style="width: 100px;"
-                                                oninput="check_changed(this)">
-                                        </p>
-                                        <p class="control">
-                                            <a class="button is-static" style="width: 60px;">bool</a>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="column" style="padding: 0;">
-                                    <p class="control">
-                                        <button disabled onclick="set_default('setting_$13')"
-                                            class="button is-pulled-right advanced_setting">Default</button>
-                                    </p>
-                                </div>
-                            </div>
-                            <p class="help">Toggles between firmware reporting in mm (0) or inches (1)... if for some
-                                reason you wanted freedom units.</p>
-                        </fieldset>
-                    </div>
+                                // Select correct template based on advanced setting or not
+                                if (item["advanced"]) {
+                                    temp_out = html_settings_advanced
+                                } else {
+                                    temp_out = html_settings
+                                }
 
-                    <div class="field">
-                        <label class="label">Soft Limits <code>$20</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$20" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">bool</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$20')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">If enabled (1), firmware will check each GCODE command is within defined maximum
-                            travel limits. If a command is not within these limits, an immediate feed hold is issued,
-                            and the system alarm is activated. (0) disabled this functionality.</p>
-                    </div>
+                                // Replace variables
+                                temp_out = temp_out
+                                    .replace(/{{title}}/g, item["title"])
+                                    .replace(/{{id}}/g, item["id"])
+                                    .replace(/{{unit}}/g, item["unit"])
+                                    .replace(/{{help}}/g, item["help"])
 
-                    <div class="field">
-                        <fieldset disabled class="advanced_setting">
-                            <label class="label">Hard limits <code>$21</code></label>
-                            <div class="columns" style="margin: 0;">
-                                <div class="column" style="padding: 0;">
-                                    <div class="field has-addons" style="margin: 0;">
-                                        <p class="control">
-                                            <input id="setting_$21" class="input" type="number" style="width: 100px;"
-                                                oninput="check_changed(this)">
-                                        </p>
-                                        <p class="control">
-                                            <a class="button is-static" style="width: 60px;">bool</a>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="column" style="padding: 0;">
-                                    <p class="control">
-                                        <button disabled onclick="set_default('setting_$21')"
-                                            class="button is-pulled-right advanced_setting">Default</button>
-                                    </p>
-                                </div>
-                            </div>
-                            <p class="help">Using connected limit switches, firmware will halt all motion if a switch is
-                                hit. An infinite alarm will be triggered, and a full reset will be required. Enable
-                                limits with (1) or disable with (0)</p>
-                        </fieldset>
-                    </div>
+                                // Update main string
+                                html = html.concat(temp_out)
+                            }
 
-                    <div class="field">
-                        <fieldset disabled class="advanced_setting">
-                            <label class="label">Homing Cycle <code>$22</code></label>
-                            <div class="columns" style="margin: 0;">
-                                <div class="column" style="padding: 0;">
-                                    <div class="field has-addons" style="margin: 0;">
-                                        <p class="control">
-                                            <input id="setting_$22" class="input" type="number" style="width: 100px;"
-                                                oninput="check_changed(this)">
-                                        </p>
-                                        <p class="control">
-                                            <a class="button is-static" style="width: 60px;">bool</a>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="column" style="padding: 0;">
-                                    <p class="control">
-                                        <button disabled onclick="set_default('setting_$22')"
-                                            class="button is-pulled-right advanced_setting">Default</button>
-                                    </p>
-                                </div>
-                            </div>
-                            <p class="help">Enables (1) or disables (0) the homing cycle. Only really useful for testing
-                                and debugging, as without completing a homing cycle the firmware will not know where any
-                                of the stepper motors are.</p>
-                        </fieldset>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Homing Direction Invert <code>$23</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$23" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">mask</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$23')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">By default, firmware assumes all homing limit switches are in the positive
-                            direction. This will allow axes to have limit switches instead, in the negative direction.
-                            <a onclick="show_help('modal_mask')">View mask table.</a>
-                        </p>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Homing Feed Rate <code>$24</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$24" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">mm/m</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$24')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Slower movement speed during homing operation.</a>
-                        </p>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Homing Seek Rate <code>$25</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$25" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">mm/m</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$25')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Faster movement speed during homing operation.</a>
-                        </p>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Homing Debounce <code>$26</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$26" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">ms</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$26')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Debounce delay when reading microswitches. Used only when homing. Set this value
-                            to whatever results in repeatable homing.</a>
-                        </p>
-                    </div>
-
-                    <div class="field">
-                        <fieldset disabled class="advanced_setting">
-                            <label class="label">Homing Pull Off <code>$27</code></label>
-                            <div class="columns" style="margin: 0;">
-                                <div class="column" style="padding: 0;">
-                                    <div class="field has-addons" style="margin: 0;">
-                                        <p class="control">
-                                            <input id="setting_$27" class="input" type="number" style="width: 100px;"
-                                                oninput="check_changed(this)">
-                                        </p>
-                                        <p class="control">
-                                            <a class="button is-static" style="width: 60px;">mm</a>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="column" style="padding: 0;">
-                                    <p class="control">
-                                        <button disabled onclick="set_default('setting_$27')"
-                                            class="button is-pulled-right advanced_setting">Default</button>
-                                    </p>
-                                </div>
-                            </div>
-                            <p class="help">Helps when hard limits are enabled; the machine will pull off limit switches
-                                after homing by this amount. This helps prevent accidental triggering during normal
-                                operation. Make sure this value is large enough to clear the limit switch.</p>
-                        </fieldset>
-                    </div>
-
-                    <div class="field">
-                        <fieldset disabled class="advanced_setting">
-                            <label class="label">Laser Mode <code>$32</code></label>
-                            <div class="columns" style="margin: 0;">
-                                <div class="column" style="padding: 0;">
-                                    <div class="field has-addons" style="margin: 0;">
-                                        <p class="control">
-                                            <input id="setting_$32" class="input" type="number" style="width: 100px;"
-                                                oninput="check_changed(this)">
-                                        </p>
-                                        <p class="control">
-                                            <a class="button is-static" style="width: 60px;">bool</a>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="column" style="padding: 0;">
-                                    <p class="control">
-                                        <button disabled onclick="set_default('setting_$32')"
-                                            class="button is-pulled-right advanced_setting">Default</button>
-                                    </p>
-                                </div>
-                            </div>
-                            <p class="help">When enabled (1), machine will move continuously between consecutive G1, G2,
-                                and G3 motions. When disabled, machine will operate more like a conventional CNC
-                                machine, pausing movement to allow spindle speed changes. This should not be required.
-                            </p>
-                        </fieldset>
-                    </div>
-
-                    <br>
-                    <h2 id="settings_movement" class="heading">Movement Settings</h2>
-                    <br>
-                    <div class="field">
-                        <label class="label">Max Rate (X) <code>$110</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$110" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">mm/m</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$110')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Maximum rate at which stepper motor controlling X axis will run. Can be tuned by
-                            increasing until steppers stall, and then set 10-20% below this value.</a>
-                        </p>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Max Rate (Y) <code>$111</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$111" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">mm/m</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$111')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Maximum rate at which stepper motor controlling Y axis will run. Can be tuned by
-                            increasing until steppers stall, and then set 10-20% below this value.</a>
-                        </p>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Max Rate (Z) <code>$112</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$112" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">mm/m</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$112')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Maximum rate at which stepper motor controlling Z axis will run. Can be tuned by
-                            increasing until steppers stall, and then set 10-20% below this value.</a>
-                        </p>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Acceleration (X) <code>$120</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$120" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">mm/m</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$120')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Maximum acceleration of X axis during motion. Can be tuned by
-                            increasing until steppers stall, and then set 10-20% below this value.</a>
-                        </p>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Acceleration (Y) <code>$121</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$121" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">mm/m</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$121')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Maximum acceleration of Y axis during motion. Can be tuned by
-                            increasing until steppers stall, and then set 10-20% below this value.</a>
-                        </p>
-                    </div>
-
-                    <div class="field">
-                        <label class="label">Acceleration (Z) <code>$122</code></label>
-                        <div class="columns" style="margin: 0;">
-                            <div class="column" style="padding: 0;">
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="setting_$122" class="input" type="number" style="width: 100px;"
-                                            oninput="check_changed(this)">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">mm/m</a>
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="column" style="padding: 0;">
-                                <p class="control">
-                                    <button onclick="set_default('setting_$122')"
-                                        class="button is-pulled-right">Default</button>
-                                </p>
-                            </div>
-                        </div>
-                        <p class="help">Maximum acceleration of Z axis during motion. Can be tuned by
-                            increasing until steppers stall, and then set 10-20% below this value.</a>
-                        </p>
-                    </div>
+                            // Update HMTL on page
+                            div.innerHTML = html
+                        }
+                        update_settings()
+                    </script>
 
                     <div style="height: 10em;"></div>
 

@@ -7,7 +7,7 @@
 cd $(dirname "$0")
 
 FAKETTY=ttyGRBL
-GRBLSIM="./grbl_sim"
+GRBLSIM="./grbl_sim.exe"
 
 # Kill the socat process running in background
 trap "ctrl_c" 2

@@ -39,7 +39,7 @@
         {
             const radialSegments = 100;
             const heightSegments = 100;
-            const openEnded = true;
+            const openEnded = false;
             var geometry = new THREE.CylinderGeometry(
                 cylRadius, cylRadius, cylHeight, radialSegments, heightSegments, openEnded);
         }
@@ -50,9 +50,9 @@
         var aoMap = new THREE.TextureLoader().load(textureName + "ao_4k.jpg");
         var bumpMap = new THREE.TextureLoader().load(textureName + "disp_4k.jpg");
 
-        colourMap.repeat.set(cylHeight * 4, 4)
-        colourMap.wrapS = colourMap.wrapT = normalMap.wrapS = normalMap.wrapT = aoMap.wrapS = aoMap.wrapT = bumpMap.wrapS = bumpMap.wrapT = THREE.RepeatWrapping;
-        colourMap.rotation = Math.PI / 2
+        normalMap.repeat.set(cylHeight * 4, 4)
+        normalMap.wrapS = normalMap.wrapT = aoMap.wrapS = aoMap.wrapT = bumpMap.wrapS = bumpMap.wrapT = THREE.RepeatWrapping;
+        normalMap.rotation = Math.PI / 2
         // normalMap.repeat.set(16, 16)
 
         var material = new THREE.MeshStandardMaterial({
@@ -61,7 +61,7 @@
             metalness: 0.1,
             // clearcoat: 0.5,
             // clearcoatRoughness: 0.11,
-            map: colourMap,
+            // map: colourMap,
             normalMap: normalMap,
             bumpMap: bumpMap,
             bumpScale: 0.02,
@@ -109,8 +109,8 @@
         controls.dampingFactor = 0.08;
         // controls.enableZoom = false;
         controls.enablePan = false;
-        controls.maxPolarAngle = Math.PI / 2 + 0.1;
-        controls.minPolarAngle = Math.PI / 2 - 0.1;
+        // controls.maxPolarAngle = Math.PI / 2 + 0.1;
+        // controls.minPolarAngle = Math.PI / 2 - 0.1;
         controls.rotateSpeed = 0.5;
         controls.update();
 

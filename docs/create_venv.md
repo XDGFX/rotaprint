@@ -8,7 +8,7 @@ Both pip and npm are used for Python and JavaScript dependencies respectively.
 # Part A
 1. Check `pip` and `venv` are installed
 ```bash
-sudo apt-get update
+sudo apt-get update; sudo apt-get upgrade
 sudo apt-get -y install python3-pip python3-venv
 ```
 

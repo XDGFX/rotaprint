@@ -4,6 +4,7 @@ __pycache__/
 node_modules/
 grbl-1.1h/*
 !grbl-1.1h/simport.sh
+!grbl-1.1h/grbl_sim.exe
 rotaprint.db
 .DS_Store
 
