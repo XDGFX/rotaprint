@@ -258,6 +258,9 @@ class websocket:
             # Convert to (reversed) tuple for SQL query
             db_settings = [(v, k) for k, v in settings.items()]
             db.set_settings(db_settings)
+
+            g.send_settings()
+
             return "DONE"
 
         def send_manual(self, payload):
@@ -400,7 +403,7 @@ class grbl:
     def clear_lockout(self):
         log.warning("Lockout error detected! Attempting to override...")
         log.debug("GRBL < $X")
-        s.write("$X".encode())
+        s.write("$X\n".encode())
 
     def send_settings(self):
         log.info("Checking if firmware settings need updating...")
