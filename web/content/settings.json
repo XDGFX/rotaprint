@@ -1,9 +1,18 @@
 {
     "categories": [
+        "general",
         "controller",
         "movement"
     ],
     "settings": [
+        {
+            "title": "Speed Warning Threshold",
+            "id": "warning_percentage",
+            "unit": "%",
+            "advanced": false,
+            "category": "general",
+            "help": "If Y surface speed is not within this percentage of X surface speed, a warning will be displayed, prompting the user to update the Y max rate."
+        },
         {
             "title": "Length of Step Pulse",
             "id": "$0",
@@ -167,6 +176,14 @@
             "help": "Number of steps per mm of pen movement in X axis"
         },
         {
+            "title": "Step Ratio (Y)",
+            "id": "$101",
+            "unit": "s/°",
+            "advanced": false,
+            "category": "movement",
+            "help": "Number of steps per ° of part rotation"
+        },
+        {
             "title": "Step Ratio (Z)",
             "id": "$102",
             "unit": "s/mm",
@@ -201,8 +218,8 @@
         {
             "title": "Max Rate (Y)",
             "id": "$111",
-            "unit": "mm/m",
-            "advanced": true,
+            "unit": "°/m",
+            "advanced": false,
             "category": "movement",
             "help": "Maximum rate at which stepper motor controlling Y axis will run. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
         },
@@ -241,7 +258,7 @@
         {
             "title": "Acceleration (Y)",
             "id": "$121",
-            "unit": "mm/m",
+            "unit": "°/m",
             "advanced": true,
             "category": "movement",
             "help": "Maximum acceleration of Y axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
@@ -281,10 +298,10 @@
         {
             "title": "Max Travel (Y)",
             "id": "$131",
-            "unit": "mm",
+            "unit": "°",
             "advanced": true,
             "category": "movement",
-            "help": "Maximum travel of Y axis during motion."
+            "help": "Maximum travel of Y axis during motion. Should be set high to avoid errors."
         },
         {
             "title": "Max Travel (Z)",

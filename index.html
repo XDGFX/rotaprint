@@ -138,15 +138,31 @@
                                     onclick="show_help('modal_check_mode'), modal_animation('animation_check_mode', 'show')">?</a>
                             </div>
 
-                            <div class="field">
-                                <label class="label">Part Radius</label>
-                                <div class="field has-addons" style="margin: 0;">
-                                    <p class="control">
-                                        <input id="input_radius" class="input" type="number" style="width: 100px;">
-                                    </p>
-                                    <p class="control">
-                                        <a class="button is-static" style="width: 60px;">mm</a>
-                                    </p>
+                            <div class="columns">
+                                <div class="column">
+                                    <div class="field">
+                                        <label class="label">Part Radius</label>
+                                        <div class="field has-addons" style="margin: 0;">
+                                            <p class="control">
+                                                <input id="input_radius" class="input" type="number"
+                                                    style="width: 100px;" min="0" onchange="update_surface_speed()">
+                                            </p>
+                                            <p class="control">
+                                                <a class="button is-static" style="width: 60px;">mm</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <div class="field">
+                                        <label class="label">Surface Speed</label>
+                                        <div class="field" style="margin: 0;">
+                                            <p class="control">
+                                                <input id="display_surface_speed" class="input" type="text"
+                                                    style="width: 160px;" readonly>
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -154,7 +170,8 @@
                                 <label class="label">Part Length</label>
                                 <div class="field has-addons" style="margin: 0;">
                                     <p class="control">
-                                        <input id="input_length" class="input" type="number" style="width: 100px;">
+                                        <input id="input_length" class="input" type="number" style="width: 100px;"
+                                            min="0">
                                     </p>
                                     <p class="control">
                                         <a class="button is-static" style="width: 60px;">mm</a>
@@ -222,9 +239,10 @@
                 <div class="column is-one-quarter">
                     <div class="menu sticky">
                         <p class="menu-label"><b>General</b></p>
-                        <ul id="menu" class="menu-list">
+                        <ul id="settings_menu" class="menu-list">
                             <li><a class="menu_button is-active" href="#settings_connection">Printer Connection</a></li>
                             <li><a class="menu_button" href="#settings_default">Default Settings</a></li>
+                            <li><a class="menu_button" href="#settings_general">General Settings</a></li>
                             <li><a class="menu_button" href="#settings_controller">Controller Settings</a></li>
                             <li><a class="menu_button" href="#settings_movement">Movement Settings</a></li>
                         </ul>
@@ -284,7 +302,7 @@
                         <label class="label">Part Length <code>length</code></label>
                         <div class="field has-addons" style="margin: 0;">
                             <p class="control">
-                                <input id="setting_length" class="input" type="number" style="width: 100px;"
+                                <input id="setting_length" class="input" type="number" style="width: 100px;" min="0"
                                     oninput="check_changed(this)">
                             </p>
                             <p class="control">
@@ -298,7 +316,7 @@
                         <label class="label">Part Radius <code>radius</code></label>
                         <div class="field has-addons" style="margin: 0;">
                             <p class="control">
-                                <input id="setting_radius" class="input" type="number" style="width: 100px;"
+                                <input id="setting_radius" class="input" type="number" style="width: 100px;" min="0"
                                     oninput="check_changed(this)">
                             </p>
                             <p class="control">

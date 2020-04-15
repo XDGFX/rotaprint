@@ -139,6 +139,9 @@ class database:
         # --- Printer specific ---
         ("port", "grbl-1.1h/ttyGRBL"),  # TODO CHANGE to /dev/ttyUSB1
 
+        # --- Other settings ---
+        ("warning_percentage", 10),
+
         # --- Option defaults ---
         ("length", 100),
         ("radius", 10),
@@ -445,14 +448,13 @@ class grbl:
         while not temp_out.startswith("$"):
             # Wait for settings to start receiving
 
-            if timeout_counter > 10:
+            if timeout_counter > 20:
                 # Timeout condition
                 log.error("Printer communication timeout while reading settings")
                 log.info("Will reconnect in an attempt to fix")
                 self.reconnect()
                 log.warning(
-                    "Attempting to continue by forcing settings update, \
-                    if this doesn't work restart the machine and try again!")
+                    "Attempting to continue by forcing settings update, if this doesn't work restart the machine and try again!")
                 force_settings = True
                 break
 

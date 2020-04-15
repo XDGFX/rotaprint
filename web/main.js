@@ -236,12 +236,12 @@ function send_gcode(data) {
 }
 
 // DATABASE
+
+// Get settings from database and update form values
 // Set default variable to make global
 settings_table = ""
 default_settings = ""
 function update_settings(data) {
-    // Get settings from database and update form values
-
     // Send command
     if (data == null) {
         ws.send(payloader("FTS"))
@@ -281,9 +281,15 @@ function update_settings(data) {
             .replace(/_/g, "\\_")
         )
         if (id != null) {
-            id.value = settings_table[key]
+            // Only update if new session
+            if (id.value == "") {
+                id.value = settings_table[key]
+            }
         }
     }
+
+    // Update current print speed based on new settings
+    update_surface_speed()
 }
 
 var commit_settings = {};
@@ -334,6 +340,9 @@ function send_new_settings(data) {
                 duration: 4000,
                 animate: { in: "fadeInRight", out: "fadeOutRight" }
             });
+
+            // Update new settings to variable
+            update_settings()
             return
 
         case "ERROR":
@@ -402,6 +411,34 @@ function hide_help(which) {
     setTimeout(function () {
         modal_animation()
     }, 250);
+}
+
+function update_surface_speed() {
+    display = document.querySelector("#display\_surface\_speed")
+    radius = document.querySelector("#input_radius").value
+
+    max_rate_x = settings_table["$110"]
+    max_rate_y = settings_table["$111"]
+    warning_percentage = settings_table["warning_percentage"]
+
+    // speed = °/min * (2πr / 360)
+    speed = max_rate_y * (2 * Math.PI * radius / 360)
+
+    // Round to 4dp (function toFixed didn't always work for me)
+    speed = Math.round(speed * 1000) / 1000
+
+    display.value = speed.toString().concat(" mm/min")
+
+    lower_quartile = (100 - warning_percentage) / 100 * max_rate_x
+    upper_quartile = (100 + warning_percentage) / 100 * max_rate_x
+
+    if (speed < lower_quartile || speed > upper_quartile) {
+        display.classList.add('is-danger');
+        display.classList.remove('is-success');
+    } else {
+        display.classList.remove('is-danger');
+        display.classList.add('is-success');
+    }
 }
 
 
@@ -555,41 +592,30 @@ function set_default(input_id) {
 
 // Settings menu scroller
 document.getElementById("machine_settings").addEventListener("scroll", evt => {
-    var quickLinks = document.querySelectorAll(".menu-list a");
+    // Get current scroll position
     y_pos = evt.target.scrollTop;
 
-    item_movement = document.getElementById("settings_movement")
-    item_controller = document.getElementById("settings_controller")
-    item_defaults = document.getElementById("settings_default")
-    item_connection = document.getElementById("settings_connection")
+    // Add static settings categories to dynamic categories list
+    categories = ["connection", "default"]
+        .concat(settings_json["categories"])
 
-    if (y_pos > item_movement.offsetTop) {
-        // Movement Settings
-        quickLinks[0].classList.remove("is-active")
-        quickLinks[1].classList.remove("is-active")
-        quickLinks[2].classList.remove("is-active")
-        quickLinks[3].classList.add("is-active")
+    // Iterate over categories
+    for (i = 0; i < categories.length; i++) {
+        element = document.getElementById("settings_".concat(categories[i]))
+        link = document.querySelector("[href='#settings_".concat(categories[i]).concat("']"));
 
-    } else if (y_pos > item_controller.offsetTop) {
-        // Controller Settings
-        quickLinks[0].classList.remove("is-active")
-        quickLinks[1].classList.remove("is-active")
-        quickLinks[2].classList.add("is-active")
-        quickLinks[3].classList.remove("is-active")
-
-    } else if (y_pos > item_defaults.offsetTop) {
-        // Default Settings
-        quickLinks[0].classList.remove("is-active")
-        quickLinks[1].classList.add("is-active")
-        quickLinks[2].classList.remove("is-active")
-        quickLinks[3].classList.remove("is-active")
-
-    } else {
-        // Printer Connection
-        quickLinks[0].classList.add("is-active")
-        quickLinks[1].classList.remove("is-active")
-        quickLinks[2].classList.remove("is-active")
-        quickLinks[3].classList.remove("is-active")
+        // If scroll has passed this category heading, make active, and remove active from all preceeding headings
+        if (y_pos > element.offsetTop) {
+            if (i > 0) {
+                for (j = 0; j <= i; j++) {
+                    link = document.querySelector("[href='#settings_".concat(categories[j]).concat("']"));
+                    link.classList.remove("is-active")
+                }
+            }
+            link.classList.add("is-active")
+        } else if (i != 0) {
+            link.classList.remove("is-active")
+        }
     }
 })
 
