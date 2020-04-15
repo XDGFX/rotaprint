@@ -1,0 +1,460 @@
+<!-- 
+* Copyright (c) 2020
+* This file is part of the TDCA rotary printer project.
+* 
+* HTML for modals
+* Written by Callum Morrison <callum.morrison@mac.com>, 2020
+* 
+* Unauthorized copying of this file, via any medium is strictly prohibited
+* Proprietary and confidential
+-->
+
+<div class="modal modal-fx-fadeInScale" id="modal_check_mode">
+    <div class="modal-background" onclick="hide_help(this)"></div>
+    <div class="modal-content">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Check Mode</p><button class="delete"
+                onclick="hide_help(this.parentElement.parentElement)"></button>
+        </header>
+        <section class="modal-card-body"><strong>Check mode</strong> is used to verify GCODE files are accepted by the
+            printer,before actual printing occurs. By enabling <b>check mode</b> the GCODE will be streamed to the
+            printer asnormal, but no movement will occur. <br><br>
+            <div id="animation_check_mode"></div>An output log will be presented once complete (will take as long as a
+            normal print), forcheckingand verification. If you are happy with the output, disable check mode for real
+            printing.
+        </section>
+        <footer class="modal-card-foot"><button class="button"
+                onclick="hide_help(this.parentElement.parentElement)">Ok</button></footer>
+    </div>
+</div>
+
+<div class="modal modal-fx-fadeInScale" id="modal_mask">
+    <div class="modal-background" onclick="hide_help(this)"></div>
+    <div class="modal-content">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Mask Settings</p><button class="delete"
+                onclick="hide_help(this.parentElement.parentElement)"></button>
+        </header>
+        <section class="modal-card-body"><b>Mask</b> settings store printer axes as bit flags. The setting value
+            represents a mask as shownbelow.<div class="columns is-centered">
+                <div class="column is-narrow">
+                    <table class="table has-text-centered">
+                        <thead>
+                            <tr>
+                                <th>Setting Value</th>
+                                <th>Invert X</th>
+                                <th>Invert Y</th>
+                                <th>Invert Z</th>
+                                <th>Invert A</th>
+                                <th>Invert B</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>0</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>1</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>5</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>6</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>7</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>8</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>9</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>10</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>11</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>12</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>13</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>14</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>15</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                            </tr>
+                            <tr>
+                                <td>16</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>17</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>18</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>19</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>20</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>21</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>22</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>23</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>24</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>25</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>26</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>27</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>28</td>
+                                <td>N</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>29</td>
+                                <td>Y</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>30</td>
+                                <td>N</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                            </tr>
+                            <tr>
+                                <td>31</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                                <td>Y</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        <footer class="modal-card-foot"><button class="button"
+                onclick="hide_help(this.parentElement.parentElement)">Ok</button></footer>
+    </div>
+</div>
+
+<div class="modal modal-fx-fadeInScale" id="modal_confirm_settings">
+    <div class="modal-background" onclick="hide_help(this)"></div>
+    <div class="modal-content">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Confirmation of Changes</p><button class="delete"
+                onclick="hide_help(this.parentElement.parentElement)"></button>
+        </header>
+        <section class="modal-card-body">
+            <table class="table has-text-centered">
+                <thead>
+                    <tr>
+                        <th>Setting</th>
+                        <th>Old Value</th>
+                        <th>New Value</th>
+                    </tr>
+                </thead>
+                <tbody id="updated_settings_table"></tbody>
+            </table>
+        </section>
+        <footer class="modal-card-foot"><button id="confirm_settings_button" disabled class="button is-danger"
+                onclick="send_new_settings('CONFIRM'); hide_help(this.parentElement.parentElement); hide_settings()"></button><button
+                class="button" onclick="hide_help(this.parentElement.parentElement)">Cancel</button></footer>
+    </div>
+</div>
+
+<div class="modal modal-fx-fadeInScale" id="modal_manual_command">
+    <div class="modal-background" onclick="hide_help(this)"></div>
+    <div class="modal-content">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Manual Command</p><button class="delete"
+                onclick="hide_help(this.parentElement.parentElement)"></button>
+        </header>
+        <section class="modal-card-body">You can manually send commands to the backend for testing and debugging. It is
+            recommended to keepthe logs window open while using this. Incorrect commands can break the backend and
+            require a fullrestart - or worse!<br><br><b>Use at your own discretion.</b><br><br>
+            <table class="table table-bordered table-hover table-condensed">
+                <thead>
+                    <tr>
+                        <th title="Field #1">Command</th>
+                        <th title="Field #2">Payload</th>
+                        <th title="Field #3">Description</th>
+                        <th title="Field #4">Response</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>EST</td>
+                        <td>NONE</td>
+                        <td>Emergency Stop</td>
+                        <td>"DONE"</td>
+                    </tr>
+                    <tr>
+                        <td>BFH</td>
+                        <td>NONE</td>
+                        <td>Buffer hold; following messages are held</td>
+                        <td> </td>
+                    </tr>
+                    <tr>
+                        <td>BFR</td>
+                        <td>NONE</td>
+                        <td>Buffer release; held messages are sent as one</td>
+                        <td> </td>
+                    </tr>
+                    <tr>
+                        <td>LEN</td>
+                        <td>FLOAT</td>
+                        <td>Length of part to print on</td>
+                        <td> </td>
+                    </tr>
+                    <tr>
+                        <td>BAT</td>
+                        <td>INT</td>
+                        <td>Number of parts in batch (1-5)</td>
+                        <td> </td>
+                    </tr>
+                    <tr>
+                        <td>RAD</td>
+                        <td>FLOAT</td>
+                        <td>Radius of part to print on</td>
+                        <td> </td>
+                    </tr>
+                    <tr>
+                        <td>CHK</td>
+                        <td>BOOL</td>
+                        <td>Enable check mode</td>
+                        <td> </td>
+                    </tr>
+                    <tr>
+                        <td>DBS</td>
+                        <td>STRING</td>
+                        <td>Database setting update</td>
+                        <td> </td>
+                    </tr>
+                    <tr>
+                        <td>GRB</td>
+                        <td>STRING</td>
+                        <td>Send manual code to GRBL</td>
+                        <td> </td>
+                    </tr>
+                    <tr>
+                        <td>GCD</td>
+                        <td>NONE</td>
+                        <td>Following message is GCODE blob</td>
+                        <td> </td>
+                    </tr>
+                    <tr>
+                        <td>PRN</td>
+                        <td>NONE</td>
+                        <td>Print now</td>
+                        <td> </td>
+                    </tr>
+                    <tr>
+                        <td>FTS</td>
+                        <td>NONE</td>
+                        <td>Fetch all current settings</td>
+                        <td>Settings array</td>
+                    </tr>
+                    <tr>
+                        <td>RQV</td>
+                        <td>STRING</td>
+                        <td>Request value of variable</td>
+                        <td>Current value</td>
+                    </tr>
+                    <tr>
+                        <td>RCN</td>
+                        <td>NONE</td>
+                        <td>Reconnect to machine</td>
+                        <td>"DONE"</td>
+                    </tr>
+                    <tr>
+                        <td>LOG</td>
+                        <td>NONE</td>
+                        <td>Request log messages</td>
+                        <td>Logs</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <footer class="modal-card-foot"><button class="button"
+                onclick="hide_help(this.parentElement.parentElement)">Ok</button></footer>
+    </div>
+</div>

@@ -1,9 +1,12 @@
 {
+    "categories": [
+        "controller",
+        "movement"
+    ],
     "settings": [
         {
             "title": "Length of Step Pulse",
             "id": "$0",
-            "default": 10,
             "unit": "μs",
             "advanced": false,
             "category": "controller",
@@ -12,7 +15,6 @@
         {
             "title": "Step Idle Delay",
             "id": "$1",
-            "default": 255,
             "unit": "ms",
             "advanced": false,
             "category": "controller",
@@ -21,7 +23,6 @@
         {
             "title": "Step Port Invert",
             "id": "$2",
-            "default": 0,
             "unit": "mask",
             "advanced": true,
             "category": "controller",
@@ -30,7 +31,6 @@
         {
             "title": "Direction Port Invert",
             "id": "$3",
-            "default": 0,
             "unit": "mask",
             "advanced": false,
             "category": "controller",
@@ -39,7 +39,6 @@
         {
             "title": "Step Enable Invert",
             "id": "$4",
-            "default": 0,
             "unit": "bool",
             "advanced": false,
             "category": "controller",
@@ -48,7 +47,6 @@
         {
             "title": "Limit Pins Invert",
             "id": "$5",
-            "default": 0,
             "unit": "bool",
             "advanced": false,
             "category": "controller",
@@ -57,7 +55,6 @@
         {
             "title": "Probe Pin Invert",
             "id": "$6",
-            "default": 0,
             "unit": "bool",
             "advanced": true,
             "category": "controller",
@@ -84,7 +81,6 @@
         {
             "title": "Report Unit",
             "id": "$13",
-            "default": 0,
             "unit": "bool",
             "advanced": true,
             "category": "controller",
@@ -93,7 +89,6 @@
         {
             "title": "Soft Limits",
             "id": "$20",
-            "default": 0,
             "unit": "bool",
             "advanced": false,
             "category": "controller",
@@ -102,7 +97,6 @@
         {
             "title": "Hard limits",
             "id": "$21",
-            "default": 0,
             "unit": "bool",
             "advanced": true,
             "category": "controller",
@@ -111,7 +105,6 @@
         {
             "title": "Homing Cycle",
             "id": "$22",
-            "default": 1,
             "unit": "bool",
             "advanced": true,
             "category": "controller",
@@ -120,7 +113,6 @@
         {
             "title": "Homing Direction Invert",
             "id": "$23",
-            "default": 0,
             "unit": "mask",
             "advanced": false,
             "category": "controller",
@@ -129,34 +121,30 @@
         {
             "title": "Homing Feed Rate",
             "id": "$24",
-            "default": 25,
             "unit": "mm/m",
             "advanced": false,
             "category": "controller",
-            "help": "Slower movement speed during homing operation.</a>"
+            "help": "Slower movement speed during homing operation."
         },
         {
             "title": "Homing Seek Rate",
             "id": "$25",
-            "default": 500,
             "unit": "mm/m",
             "advanced": false,
             "category": "controller",
-            "help": "Faster movement speed during homing operation.</a>"
+            "help": "Faster movement speed during homing operation."
         },
         {
             "title": "Homing Debounce",
             "id": "$26",
-            "default": 25,
             "unit": "ms",
             "advanced": false,
             "category": "controller",
-            "help": "Debounce delay when reading microswitches. Used only when homing. Set this value to whatever results in repeatable homing.</a>"
+            "help": "Debounce delay when reading microswitches. Used only when homing. Set this value to whatever results in repeatable homing."
         },
         {
             "title": "Homing Pull Off",
             "id": "$27",
-            "default": 0,
             "unit": "mm",
             "advanced": true,
             "category": "controller",
@@ -165,69 +153,162 @@
         {
             "title": "Laser Mode",
             "id": "$32",
-            "default": 1,
             "unit": "bool",
             "advanced": true,
             "category": "controller",
             "help": "When enabled (1), machine will move continuously between consecutive G1, G2, and G3 motions. When disabled, machine will operate more like a conventional CNC machine, pausing movement to allow spindle speed changes. This should not be required."
         },
         {
+            "title": "Step Ratio (X)",
+            "id": "$100",
+            "unit": "s/mm",
+            "advanced": false,
+            "category": "movement",
+            "help": "Number of steps per mm of pen movement in X axis"
+        },
+        {
+            "title": "Step Ratio (Z)",
+            "id": "$102",
+            "unit": "s/mm",
+            "advanced": false,
+            "category": "movement",
+            "help": "Number of steps per mm of pen movement in Z axis"
+        },
+        {
+            "title": "Step Ratio (A)",
+            "id": "$103",
+            "unit": "s/mm",
+            "advanced": false,
+            "category": "movement",
+            "help": "Number of steps per mm of pen movement in A axis"
+        },
+        {
+            "title": "Step Ratio (B)",
+            "id": "$104",
+            "unit": "s/mm",
+            "advanced": false,
+            "category": "movement",
+            "help": "Number of steps per mm of pen movement in B axis"
+        },
+        {
             "title": "Max Rate (X)",
             "id": "$110",
-            "default": 500,
             "unit": "mm/m",
             "advanced": false,
-            "category": "controller",
-            "help": "Maximum rate at which stepper motor controlling X axis will run. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+            "category": "movement",
+            "help": "Maximum rate at which stepper motor controlling X axis will run. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
         },
         {
             "title": "Max Rate (Y)",
             "id": "$111",
-            "default": 500,
             "unit": "mm/m",
-            "advanced": false,
-            "category": "controller",
-            "help": "Maximum rate at which stepper motor controlling Y axis will run. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+            "advanced": true,
+            "category": "movement",
+            "help": "Maximum rate at which stepper motor controlling Y axis will run. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
         },
         {
             "title": "Max Rate (Z)",
             "id": "$112",
-            "default": 500,
             "unit": "mm/m",
             "advanced": false,
-            "category": "controller",
-            "help": "Maximum rate at which stepper motor controlling Z axis will run. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+            "category": "movement",
+            "help": "Maximum rate at which stepper motor controlling Z axis will run. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
+        },
+        {
+            "title": "Max Rate (A)",
+            "id": "$113",
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "movement",
+            "help": "Maximum rate at which stepper motor controlling A axis will run."
+        },
+        {
+            "title": "Max Rate (B)",
+            "id": "$114",
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "movement",
+            "help": "Maximum rate at which stepper motor controlling B axis will run."
         },
         {
             "title": "Acceleration (X)",
             "id": "$120",
-            "default": 10,
             "unit": "mm/m",
             "advanced": false,
-            "category": "controller",
-            "help": "Maximum acceleration of X axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+            "category": "movement",
+            "help": "Maximum acceleration of X axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
         },
         {
             "title": "Acceleration (Y)",
             "id": "$121",
-            "default": 10,
             "unit": "mm/m",
-            "advanced": false,
-            "category": "controller",
-            "help": "Maximum acceleration of Y axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+            "advanced": true,
+            "category": "movement",
+            "help": "Maximum acceleration of Y axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
         },
         {
             "title": "Acceleration (Z)",
             "id": "$122",
-            "default": 10,
             "unit": "mm/m",
             "advanced": false,
-            "category": "controller",
-            "help": "Maximum acceleration of Z axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value.</a>"
+            "category": "movement",
+            "help": "Maximum acceleration of Z axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
+        },
+        {
+            "title": "Acceleration (A)",
+            "id": "$123",
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "movement",
+            "help": "Maximum acceleration of A axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
+        },
+        {
+            "title": "Acceleration (B)",
+            "id": "$124",
+            "unit": "mm/m",
+            "advanced": false,
+            "category": "movement",
+            "help": "Maximum acceleration of B axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
+        },
+        {
+            "title": "Max Travel (X)",
+            "id": "$130",
+            "unit": "mm",
+            "advanced": false,
+            "category": "movement",
+            "help": "Maximum travel of X axis during motion."
+        },
+        {
+            "title": "Max Travel (Y)",
+            "id": "$131",
+            "unit": "mm",
+            "advanced": true,
+            "category": "movement",
+            "help": "Maximum travel of Y axis during motion."
+        },
+        {
+            "title": "Max Travel (Z)",
+            "id": "$132",
+            "unit": "mm",
+            "advanced": false,
+            "category": "movement",
+            "help": "Maximum travel of Z axis during motion."
+        },
+        {
+            "title": "Max Travel (A)",
+            "id": "$133",
+            "unit": "mm",
+            "advanced": false,
+            "category": "movement",
+            "help": "Maximum travel of A axis during motion."
+        },
+        {
+            "title": "Max Travel (B)",
+            "id": "$134",
+            "unit": "mm",
+            "advanced": false,
+            "category": "movement",
+            "help": "Maximum travel of B axis during motion."
         }
-    ],
-    "sections": [
-        "controller",
-        "movement"
     ]
 }

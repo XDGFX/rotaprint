@@ -9,6 +9,72 @@
  * Proprietary and confidential
  */
 
+// VARIABLE LOADER
+// Load data in async function so it can be awaited
+// This can be called repeatedly, as fetch() uses cache after the initial request
+// Code is cleaned to reduce filesize
+load_data = async () => {
+    // Load standard HTML setting
+    response = await fetch("web/templates/setting.html")
+    html_settings = await response.text()
+    html_settings = html_settings
+        .replace(/\n/g, "")
+        .replace(/<\!--[\w\W]+?-->/g, "")
+        .replace(/[ ]{2,}/g, " ")
+
+    // Load advanced HTML setting
+    response = await fetch("web/templates/setting_advanced.html")
+    html_settings_advanced = await response.text()
+    html_settings_advanced = html_settings_advanced
+        .replace(/\n/g, "")
+        .replace(/<\!--[\w\W]+?-->/g, "")
+        .replace(/[ ]{2,}/g, " ")
+
+    // Load settings heading
+    response = await fetch("web/templates/setting_heading.html")
+    html_settings_heading = await response.text()
+    html_settings_heading = html_settings_heading
+        .replace(/\n/g, "")
+        .replace(/<\!--[\w\W]+?-->/g, "")
+        .replace(/[ ]{2,}/g, " ")
+
+    // Load modals html
+    response = await fetch("web/content/modals.html")
+    html_modals = await response.text()
+    html_modals = html_modals
+        .replace(/\n/g, "")
+        .replace(/<\!--[\w\W]+?-->/g, "")
+        .replace(/[ ]{2,}/g, " ")
+
+    // Load and parse settings json
+    response = await fetch("web/content/settings.json", { cache: "reload" })
+    settings_json = await response.text()
+    settings_json = JSON.parse(settings_json)
+
+    return [html_settings, html_settings_advanced, settings_json, html_settings_heading, html_modals]
+}
+
+// Generate HTML content on index.html using external templates and content
+async function generate_content() {
+    // Load saved data into variables
+    // Await required so data is loaded synchronously before attempted html generation
+    await load_data()
+
+    // Generate settings page
+    generate_settings()
+
+    // Generate other static content
+    generate_static_content()
+
+    // Update settings page
+    update_settings()
+}
+
+function generate_static_content() {
+    div = document.querySelector("#modals\\_div")
+    div.innerHTML = html_modals
+}
+
 // WEBSOCKET
 // Initialise websocket
 ws = new WebSocket("ws://localhost:8765");
@@ -27,16 +93,24 @@ ws.onopen = function (e) {
         document.getElementById("pageloader").classList.remove('is-active');
     }, 1000);
 
+    // Generate page content
+    generate_content()
+
     // Check connection to grbl
     check_connected()
 };
 
 // Function to call when message received by websocket
 ws.onmessage = function (event) {
-    console.log(`[message] Data received from server: ${event.data}`);
     data = JSON.parse(event.data)
     command = data["command"]
     payload = data["payload"]
+
+    if (command == "LOG") {
+        console.log(`[message] Data received from server: (log update)`);
+    } else {
+        console.log(`[message] Data received from server: ${event.data}`);
+    }
 
     switch (command) {
         case "GCD":
@@ -98,10 +172,17 @@ function echo_chamber(payload) {
 }
 
 function send_custom_code(e) {
-    if (e.keyCode == 13) {
-        element = document.getElementById("custom_command")
-        data = element.value
-        element.value = ""
+    if (e.keyCode == 13 || e == "FORCE") {
+        ids = ["manual_command", "manual_payload"]
+        data = []
+
+        for (item of ids) {
+            element = document.getElementById(item)
+            data.push(element.value)
+            element.value = ""
+        }
+
+        data = payloader(data[0], data[1])
         console.log(data)
         ws.send(data)
     }
@@ -156,7 +237,8 @@ function send_gcode(data) {
 
 // DATABASE
 // Set default variable to make global
-var settings_table = ""
+settings_table = ""
+default_settings = ""
 function update_settings(data) {
     // Get settings from database and update form values
 
@@ -166,10 +248,38 @@ function update_settings(data) {
         return
     }
 
-    // Handle response
-    settings_table = JSON.parse(data)
+    // Split current and default settings
+    data = data.split("~<>~")
+
+    // Get settings from response
+    settings_table = JSON.parse(data[0])
+
+    // Find machine settings, update with current values
+    container = document.getElementById("settings_column")
     for (const key of Object.keys(settings_table)) {
-        id = document.getElementById("setting_".concat(key))
+        id = container.querySelector("#setting_"
+            .concat(key)
+            .replace(/\$/g, "\\$")
+            .replace(/_/g, "\\_")
+        )
+        if (id != null) {
+            id.value = settings_table[key]
+        }
+    }
+
+    // Update default settings once only
+    if (default_settings == "") {
+        default_settings = JSON.parse(data[1])
+    }
+
+    // Update homepage settings with current defaults
+    container = document.getElementById("primary_settings_column")
+    for (const key of Object.keys(settings_table)) {
+        id = container.querySelector("#input_"
+            .concat(key)
+            .replace(/\$/g, "\\$")
+            .replace(/_/g, "\\_")
+        )
         if (id != null) {
             id.value = settings_table[key]
         }
@@ -296,6 +406,57 @@ function hide_help(which) {
 
 
 // SETTINGS
+// Insert settings html into div
+async function generate_settings() {
+    // Select div to insert content to
+    div = document.querySelector("#settings_template_div")
+
+    // Initialise variables
+    html_content = {}
+    html_heading = {}
+
+    // Setup content and heading variables
+    for (item of settings_json["categories"]) {
+        html_content[item] = ""
+
+        html_heading[item] = html_settings_heading
+            .replace(/{{item}}/g, item)
+    }
+
+    // Loop through setttings JSON and create HTML file
+    for (item of settings_json["settings"]) {
+
+        category = item["category"]
+
+        // Select correct template based on advanced setting or not
+        if (item["advanced"]) {
+            temp_out = html_settings_advanced
+        } else {
+            temp_out = html_settings
+        }
+
+        // Replace variables
+        temp_out = temp_out
+            .replace(/{{title}}/g, item["title"])
+            .replace(/{{id}}/g, item["id"])
+            .replace(/{{unit}}/g, item["unit"])
+            .replace(/{{help}}/g, item["help"])
+
+        // Update main string
+        html_content[category] = html_content[category].concat(temp_out)
+    }
+
+    temp_html = ""
+    for (item of settings_json["categories"]) {
+        temp_html = temp_html
+            .concat(html_heading[item])
+            .concat(html_content[item])
+    }
+
+    // Update HMTL on page
+    div.innerHTML = temp_html
+}
+
 function show_settings() {
     element = document.getElementById("machine_settings")
     element.classList.remove('animated', 'slideOutRight');
@@ -384,46 +545,9 @@ function check_changed(element) {
 }
 
 function set_default(input_id) {
-    var defaults = {
-        "$0": 10, // Length of step pulse, microseconds
-        "$1": 255, // Step idle delay, milliseconds
-        "$2": 0, // Step port invert, mask
-        "$3": 0, // Direction port invert, mask
-        "$4": 0, // Step enable invert, boolean
-        "$5": 0, // Limit pins invert, boolean
-        "$6": 0, // Probe pin invert, boolean
-        "$10": 1, // Status report, mask
-        "$11": 0.010, // Junction deviation, mm
-        "$12": 0.002, // Arc tolerance, mm
-        "$13": 0, // Report inches, boolean
-        "$20": 0, // Soft limits, boolean !!! Should be enabled for real use
-        "$21": 0,       // Hard limits, boolean
-        "$22": 1,       // Homing cycle, boolean
-        "$23": 0,       // Homing dir invert, mask
-        "$24": 25,      // Homing feed, mm / min
-        "$25": 500,     // Homing seek, mm / min
-        "$26": 25,      // Homing debounce, milliseconds
-        "$27": 1,       // Homing pull - off, mm
-        "$30": 1000,    // Max spindle speed, RPM
-        "$31": 0,       // Min spindle speed, RPM
-        "$32": 1,       // Laser mode, boolean
-        "$100": 250,    // X steps / mm
-        "$101": 250,    // Y steps / mm  TODO VARIES
-        "$102": 250,    // Z steps / mm
-        "$110": 500,    // X Max rate, mm / min
-        "$111": 500,    // Y Max rate, mm / min  TODO VARIES
-        "$112": 500,    // Z Max rate, mm / min
-        "$120": 10,     // X Acceleration, mm / sec ^ 2
-        "$121": 10,     // Y Acceleration, mm / sec ^ 2
-        "$122": 10,     // Z Acceleration, mm / sec ^ 2
-        "$130": 200,    // X Max travel, mm  TODO VARIES
-        "$131": 200,    // Y Max travel, mm  TODO VARIES
-        "$132": 200  // Z Max travel, mm
-    }
-
     id = input_id.split("_")[1]
 
-    default_value = defaults[input_id.split("_")[1]]
+    default_value = default_settings[input_id.split("_")[1]]
     element = document.getElementById(input_id)
     element.value = default_value
     check_changed(element)
@@ -436,7 +560,7 @@ document.getElementById("machine_settings").addEventListener("scroll", evt => {
 
     item_movement = document.getElementById("settings_movement")
     item_controller = document.getElementById("settings_controller")
-    item_defaults = document.getElementById("settings_defaults")
+    item_defaults = document.getElementById("settings_default")
     item_connection = document.getElementById("settings_connection")
 
     if (y_pos > item_movement.offsetTop) {
@@ -511,6 +635,9 @@ function update_logs(data) {
             hl = "class=\""
 
             switch (data[i + 1]) {
+                case "INFO":
+                    hl = hl + "has-background-info has-text-white\""
+                    break
                 case "WARNING":
                     hl = hl + "has-background-warning\""
                     break

@@ -115,20 +115,26 @@ class database:
         ("$30", 1000),    # Max spindle speed, RPM
         ("$31", 0),       # Min spindle speed, RPM
         ("$32", 1),       # Laser mode, boolean
-
-        # --- Variable ---
         ("$100", 250),    # X steps/mm
         ("$101", 250),    # Y steps/mm  TODO VARIES
         ("$102", 250),    # Z steps/mm
+        ("$103", 250),    # A steps/mm
+        ("$104", 250),    # B steps/mm
         ("$110", 500),    # X Max rate, mm/min
         ("$111", 500),    # Y Max rate, mm/min  TODO VARIES
         ("$112", 500),    # Z Max rate, mm/min
+        ("$113", 500),    # A Max rate, mm/min
+        ("$114", 500),    # B Max rate, mm/min
         ("$120", 10),     # X Acceleration, mm/sec^2
         ("$121", 10),     # Y Acceleration, mm/sec^2
         ("$122", 10),     # Z Acceleration, mm/sec^2
+        ("$123", 10),     # A Acceleration, mm/sec^2
+        ("$124", 10),     # B Acceleration, mm/sec^2
         ("$130", 200),    # X Max travel, mm  TODO VARIES
         ("$131", 200),    # Y Max travel, mm  TODO VARIES
         ("$132", 200),    # Z Max travel, mm
+        ("$133", 200),    # A Max travel, mm
+        ("$134", 200),    # B Max travel, mm
 
         # --- Printer specific ---
         ("port", "grbl-1.1h/ttyGRBL"),  # TODO CHANGE to /dev/ttyUSB1
@@ -164,11 +170,15 @@ class database:
         log.info("Creating new databases...")
         self.cursor.execute(
             'CREATE TABLE IF NOT EXISTS \'settings\' (parameter STRING, value REAL)')
+        self.cursor.execute(
+            'CREATE TABLE IF NOT EXISTS \'default_settings\' (parameter STRING, value REAL)')
 
         # Create default settings values
         log.debug("Inserting default settings values...")
         self.cursor.executemany(
             'INSERT INTO \'settings\' VALUES(?, ?)', self.settings)
+        self.cursor.executemany(
+            'INSERT INTO \'default_settings\' VALUES(?, ?)', self.settings)
 
         self.connection.commit()
         log.debug("Settings updated successfully")
@@ -178,7 +188,11 @@ class database:
         log.debug("Fetching settings from database...")
         self.cursor.execute('SELECT * FROM \'settings\'')
         settings = dict(self.cursor.fetchall())
-        return settings
+
+        self.cursor.execute('SELECT * FROM \'default_settings\'')
+        default_settings = dict(self.cursor.fetchall())
+
+        return settings, default_settings
 
     def set_settings(self, settings):
         log.debug("Updating database settings...")
@@ -261,7 +275,11 @@ class websocket:
             db_settings = [(v, k) for k, v in settings.items()]
             db.set_settings(db_settings)
 
-            g.send_settings()
+            if connected:
+                g.send_settings()
+            else:
+                log.error(
+                    "Not connected to printer - could not update settings. Restart rotaprint!")
 
             return "DONE"
 
@@ -288,8 +306,8 @@ class websocket:
         def fetch_settings(self, payload):
             # Return all database settings in JSON format
             log.debug("Retrieving database settings")
-            current_settings = db.get_settings()
-            return dumps(current_settings)
+            current_settings, default_settings = db.get_settings()
+            return dumps(current_settings) + "~<>~" + dumps(default_settings)
 
         def fetch_value(self, payload):
             # Get current value of variable
@@ -363,7 +381,7 @@ class grbl:
 
     def __init__(self):
         # Get GRBL settings
-        self.settings = db.get_settings()
+        self.settings, _ = db.get_settings()
         self.port = self.settings["port"]
         self.settings = {x: self.settings[x]
                          for x in self.settings if x.find("$") >= 0}
@@ -373,9 +391,11 @@ class grbl:
         global s
         global connected
 
-        if s != "":
+        try:
             s.close()
             connected = False
+        except:
+            log.warning("Could not disconnect")
         self.connect()
 
     def connect(self):
@@ -476,7 +496,7 @@ class grbl:
         send_settings = list()
 
         # Get required settings from Database
-        self.settings = db.get_settings()
+        self.settings, _ = db.get_settings()
 
         # Convert received settings to directionary
         self.settings = {x: self.settings[x]

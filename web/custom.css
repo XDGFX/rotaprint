@@ -144,7 +144,7 @@ input[type=number] {
 }
 
 #logs_quickview_button {
-  position: absolute;
+  position: fixed;
   top: calc(50% - 12px);
   right: 48px;
   opacity: 20%;
@@ -158,4 +158,9 @@ input[type=number] {
 
 #logs_quickview_button:active {
   opacity: 40%;
+}
+
+.has-text-centered tr,
+.has-text-centered td {
+  text-align: center !important;
 }
