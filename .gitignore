@@ -14,3 +14,5 @@ rotaprint.db
 tests/js/*
 tests/three/OrbitControls.js
 tests/three/three.js
+
+!web/styles.css
