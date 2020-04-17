@@ -51,23 +51,29 @@ def setup_log():
     return log, log_capture_string
 
 
-def g0_g1_conversion(gcode):
-    # Convert all GCODE where printing (indicated by a feedrate change command) to G1
-    log.info("Converting print GCODE to G1")
-    printing = 0
+class gcode:
+    gcode = ""
 
-    for idx, command in enumerate(gcode):
-        if command.startswith("G1 F"):
-            # Start of printing
-            printing = 1
-        elif command.startswith("G0 F"):
-            # End of printing
-            printing = 0
+    def g0_g1_conversion(self):
+        # Convert all GCODE where printing (indicated by a feedrate change command) to G1
+        log.info("Converting print GCODE to G1")
+        printing = 0
 
-        # Replace [G]0 with [G]1 on current line
-        if printing:
-            gcode[idx] = command[:1] + "1" + command[2:]  # Replace G0 with G1
-    return gcode
+        for idx, command in enumerate(self.gcode):
+            if command.startswith("G1 F"):
+                # Start of printing
+                printing = 1
+            elif command.startswith("G0 F"):
+                # End of printing
+                printing = 0
+
+            # Replace [G]0 with [G]1 on current line
+            if printing:
+                self.gcode[idx] = command[:1] + "1" + \
+                    command[2:]  # Replace G0 with G1
+
+    def correct_y(self):
+        gcode = 1
 
 
 class webserver:
@@ -91,63 +97,67 @@ class webserver:
 class database:
     # General class for connection with backend database
 
-    settings = [
+    settings = {
         # --- GRBL specific ---
-        ("$0", 10),       # Length of step pulse, microseconds
-        ("$1", 255),      # Step idle delay, milliseconds
-        ("$2", 0),        # Step port invert, mask
-        ("$3", 0),        # Direction port invert, mask
-        ("$4", 0),        # Step enable invert, boolean
-        ("$5", 0),        # Limit pins invert, boolean
-        ("$6", 0),        # Probe pin invert, boolean
-        ("$10", 1),       # Status report, mask
-        ("$11", 0.010),   # Junction deviation, mm
-        ("$12", 0.002),   # Arc tolerance, mm
-        ("$13", 0),       # Report inches, boolean
-        ("$20", 0),       # Soft limits, boolean !!! Should be enabled for real use
-        ("$21", 0),       # Hard limits, boolean
-        ("$22", 1),       # Homing cycle, boolean
-        ("$23", 0),       # Homing dir invert, mask
-        ("$24", 25),      # Homing feed, mm/min
-        ("$25", 500),     # Homing seek, mm/min
-        ("$26", 25),      # Homing debounce, milliseconds
-        ("$27", 1),       # Homing pull-off, mm
-        ("$30", 1000),    # Max spindle speed, RPM
-        ("$31", 0),       # Min spindle speed, RPM
-        ("$32", 1),       # Laser mode, boolean
-        ("$100", 250),    # X steps/mm
-        ("$101", 250),    # Y steps/mm  TODO VARIES
-        ("$102", 250),    # Z steps/mm
-        ("$103", 250),    # A steps/mm
-        ("$104", 250),    # B steps/mm
-        ("$110", 500),    # X Max rate, mm/min
-        ("$111", 500),    # Y Max rate, mm/min  TODO VARIES
-        ("$112", 500),    # Z Max rate, mm/min
-        ("$113", 500),    # A Max rate, mm/min
-        ("$114", 500),    # B Max rate, mm/min
-        ("$120", 10),     # X Acceleration, mm/sec^2
-        ("$121", 10),     # Y Acceleration, mm/sec^2
-        ("$122", 10),     # Z Acceleration, mm/sec^2
-        ("$123", 10),     # A Acceleration, mm/sec^2
-        ("$124", 10),     # B Acceleration, mm/sec^2
-        ("$130", 200),    # X Max travel, mm  TODO VARIES
-        ("$131", 200),    # Y Max travel, mm  TODO VARIES
-        ("$132", 200),    # Z Max travel, mm
-        ("$133", 200),    # A Max travel, mm
-        ("$134", 200),    # B Max travel, mm
+        "$0": 10,       # Length of step pulse, microseconds
+        "$1": 255,      # Step idle delay, milliseconds
+        "$2": 0,        # Step port invert, mask
+        "$3": 0,        # Direction port invert, mask
+        "$4": 0,        # Step enable invert, boolean
+        "$5": 0,        # Limit pins invert, boolean
+        "$6": 0,        # Probe pin invert, boolean
+        "$10": 1,       # Status report, mask
+        "$11": 0.010,   # Junction deviation, mm
+        "$12": 0.002,   # Arc tolerance, mm
+        "$13": 0,       # Report inches, boolean
+        "$20": 0,       # Soft limits, boolean !!! Should be enabled for real use
+        "$21": 0,       # Hard limits, boolean
+        "$22": 1,       # Homing cycle, boolean
+        "$23": 0,       # Homing dir invert, mask
+        "$24": 25,      # Homing feed, mm/min
+        "$25": 500,     # Homing seek, mm/min
+        "$26": 25,      # Homing debounce, milliseconds
+        "$27": 1,       # Homing pull-off, mm
+        "$30": 1000,    # Max spindle speed, RPM
+        "$31": 0,       # Min spindle speed, RPM
+        "$32": 1,       # Laser mode, boolean
+        "$100": 250,    # X steps/mm
+        "$101": 250,    # Y steps/mm  TODO VARIES
+        "$102": 250,    # Z steps/mm
+        "$103": 250,    # A steps/mm
+        "$104": 250,    # B steps/mm
+        "$110": 500,    # X Max rate, mm/min
+        "$111": 500,    # Y Max rate, mm/min  TODO VARIES
+        "$112": 500,    # Z Max rate, mm/min
+        "$113": 500,    # A Max rate, mm/min
+        "$114": 500,    # B Max rate, mm/min
+        "$120": 10,     # X Acceleration, mm/sec^2
+        "$121": 10,     # Y Acceleration, mm/sec^2
+        "$122": 10,     # Z Acceleration, mm/sec^2
+        "$123": 10,     # A Acceleration, mm/sec^2
+        "$124": 10,     # B Acceleration, mm/sec^2
+        "$130": 200,    # X Max travel, mm  TODO VARIES
+        "$131": 200,    # Y Max travel, mm  TODO VARIES
+        "$132": 200,    # Z Max travel, mm
+        "$133": 200,    # A Max travel, mm
+        "$134": 200,    # B Max travel, mm
 
         # --- Printer specific ---
-        ("port", "grbl-1.1h/ttyGRBL"),  # TODO CHANGE to /dev/ttyUSB1
+        "port": "grbl-1.1h/ttyGRBL",  # TODO CHANGE to /dev/ttyUSB1
 
-        # --- Other settings ---
-        ("warning_percentage", 10),
+        # --- General settings ---
+        "warning_percentage": 10,
+        "report_interval": 1,
 
         # --- Option defaults ---
-        ("length", 100),
-        ("radius", 10),
-        ("batch", 5),
-        ("check", False),
-    ]
+        "length": 100,
+        "radius": 10,
+        "batch": 5,
+        "check": False,
+    }
+
+    # Convert dictionary to list of tuples for database connection
+    settings_tuple = settings.items()
 
     def connect(self):
         log.info("Connecting to database...")
@@ -156,17 +166,24 @@ class database:
         if not os.path.isfile(db_location):
             log.info("Database not found...")
 
+            # Connect to database
             self.connection = sqlite3.connect(
                 db_location, check_same_thread=False)
             self.cursor = self.connection.cursor()
+
+            # Create and populate database tables
             self.create_databases()
 
         else:
             log.info("Database already found, using that one")
 
+            # Connect to database
             self.connection = sqlite3.connect(
                 db_location, check_same_thread=False)
             self.cursor = self.connection.cursor()
+
+            # Update settings using database values
+            self.get_settings()
 
     def create_databases(self):
         # Create new settings tables
@@ -179,9 +196,9 @@ class database:
         # Create default settings values
         log.debug("Inserting default settings values...")
         self.cursor.executemany(
-            'INSERT INTO \'settings\' VALUES(?, ?)', self.settings)
+            'INSERT INTO \'settings\' VALUES(?, ?)', self.settings_tuple)
         self.cursor.executemany(
-            'INSERT INTO \'default_settings\' VALUES(?, ?)', self.settings)
+            'INSERT INTO \'default_settings\' VALUES(?, ?)', self.settings_tuple)
 
         self.connection.commit()
         log.debug("Settings updated successfully")
@@ -190,12 +207,12 @@ class database:
         # Select and retrieve all settings
         log.debug("Fetching settings from database...")
         self.cursor.execute('SELECT * FROM \'settings\'')
-        settings = dict(self.cursor.fetchall())
+        self.settings = dict(self.cursor.fetchall())
 
         self.cursor.execute('SELECT * FROM \'default_settings\'')
         default_settings = dict(self.cursor.fetchall())
 
-        return settings, default_settings
+        return self.settings, default_settings
 
     def set_settings(self, settings):
         log.debug("Updating database settings...")
@@ -278,7 +295,7 @@ class websocket:
             db_settings = [(v, k) for k, v in settings.items()]
             db.set_settings(db_settings)
 
-            if connected:
+            if g.connected:
                 g.send_settings()
             else:
                 log.error(
@@ -291,20 +308,22 @@ class websocket:
 
         def receive_gcode(self, payload):
             # Receive gcode, and load into global variable
-            global gcode
-            gcode = [line.strip() for line in payload.split("\n")
-                     if not line.startswith('#')]
+            gc.gcode = [line.strip() for line in payload.splitlines()
+                        if not line.startswith('#')]
 
             return "DONE"
 
         def print_now(self, payload):
             # Send all supplied GCODE to printer
-            if gcode == "":
+            if gc.gcode == "":
                 log.error("No GCODE supplied; cannot print")
                 return "NO GCODE"
             else:
                 log.info("Sending gcode to printer...")
-                g.send(gcode)
+
+                # gc.correct_y()
+
+                g.send(gc.gcode)
 
         def fetch_settings(self, payload):
             # Return all database settings in JSON format
@@ -315,7 +334,7 @@ class websocket:
         def fetch_value(self, payload):
             # Get current value of variable
             variable = {
-                "connected": connected,
+                "connected": g.connected,
             }
             return str(variable[payload])
 
@@ -382,6 +401,9 @@ class grbl:
     # Checkmode toggle
     check = False
 
+    # Connected flag
+    connected = False
+
     def __init__(self):
         # Get GRBL settings
         self.settings, _ = db.get_settings()
@@ -391,36 +413,36 @@ class grbl:
 
     def reconnect(self):
         log.debug("Reconnecting to printer...")
-        global s
-        global connected
 
         try:
-            s.close()
-            connected = False
+            self.s.close()
+            self.connected = False
         except:
             log.warning("Could not disconnect")
         self.connect()
 
     def connect(self):
-        global s
-        global connected
         log.info("Connecting to printer...")
         try:
             # Connect to serial
             log.debug(f"Connecting on port {self.port}...")
-            s = serial.Serial(self.port, 115200, timeout=1)
+            self.s = serial.Serial(self.port, 115200, timeout=1)
             log.info("Connection success!")
 
             # Wake up grbl
             log.debug("GRBL < \"\\r\\n\\r\\n\"")
-            s.write("\r\n\r\n".encode())
+            self.s.write("\r\n\r\n".encode())
 
-            temp_out = s.readline().strip().decode()
+            temp_out = self.s.readline().strip().decode()
             if temp_out.find('error:9') >= 0:
                 self.clear_lockout()
             time.sleep(2)  # Wait for grbl to initialize
-            s.flushInput()  # Flush startup text in serial input
-            connected = True
+
+            # Clear any lockout alarms
+            self.clear_lockout()
+
+            self.s.flushInput()  # Flush startup text in serial input
+            self.connected = True
 
         except Exception:
             log.error("Unable to connect to printer!")
@@ -428,17 +450,17 @@ class grbl:
     def clear_lockout(self):
         log.warning("Lockout error detected! Attempting to override...")
         log.debug("GRBL < $X")
-        s.write("$X\n".encode())
+        self.s.write("$X\n".encode())
 
     def send_settings(self):
         log.info("Checking if firmware settings need updating...")
         log.debug("GRBL < $$")
-        s.write("$$".encode())
+        self.s.write("$$".encode())
 
         # In testing, GRBL would often take several lines to start responding,
         # this should flush that so program will not hang
         for _ in range(1, 20):
-            s.write("\n".encode())
+            self.s.write("\n".encode())
 
         # Wait until current settings are received
         temp_out = ""
@@ -470,7 +492,7 @@ class grbl:
                 force_settings = True
                 break
 
-            temp_out = s.readline().strip().decode()
+            temp_out = self.s.readline().strip().decode()
             log.debug(f"GRBL > {temp_out}")
 
             timeout_counter += 1
@@ -488,7 +510,7 @@ class grbl:
                     current_settings.update(dict_out)
 
                     # Update read
-                    temp_out = s.readline().strip().decode()
+                    temp_out = self.s.readline().strip().decode()
             else:
                 log.debug(f"GRBL > {temp_out}")
                 log.error("Unexpected data received from GRBL")
@@ -525,36 +547,36 @@ class grbl:
         # Built-in GRBL homing functionality
         log.info("Homing machine...")
         log.debug("GRBL < $H")
-        s.write('$H\n'.encode())
+        self.s.write('$H\n'.encode())
 
     def send_status_query(self):
         # Built in GRBL status report, in format:
         # <Idle|MPos:0.000,0.000,0.000|FS:0.0,0>
         # Recommended query frequency no more than 5Hz
-        log.debug("Sending status query...")
-        log.debug("GRBL < ?")
-        s.write('?'.encode())
+        # log.debug("Sending status query...")
+        # log.debug("GRBL < ?")
+        self.s.write('?'.encode())
 
     def periodic_timer(self):
         while True:
             if self.is_run:
                 self.send_status_query()
-            time.sleep(report_interval)
+            time.sleep(db.settings["report_interval"])
 
     def monitor(self):
         self.is_run = False
-        if enable_status_reports:
-            log.info("Starting firmware log daemon...")
-            timerThread = threading.Thread(target=self.periodic_timer)
-            timerThread.daemon = True
-            timerThread.start()
-        else:
-            log.info("Logging disabled by <enable_status_reports>")
+        # if enable_status_reports:
+        log.info("Starting firmware log daemon...")
+        timerThread = threading.Thread(target=self.periodic_timer)
+        timerThread.daemon = True
+        timerThread.start()
+        # else:
+        #     log.info("Logging disabled by <enable_status_reports>")
 
     def check_mode(self):
         log.info('Toggling grbl check-mode...')
         log.debug("GRBL < $C")
-        s.write('$C\n')
+        self.s.write('$C\n')
 
         # Invert checkmode variable
         self.check != self.check
@@ -565,7 +587,7 @@ class grbl:
             log.info("Check mode disabled!")
 
         while True:
-            out = s.readline().strip()  # Wait for grbl response with carriage return
+            out = self.s.readline().strip()  # Wait for grbl response with carriage return
             if out.find('error') >= 0:
                 log.debug(f"GRBL > {out}")
                 log.error(
@@ -592,11 +614,11 @@ class grbl:
                 log.debug(f"GRBL < {str(l_count)}: {l_block}")
 
                 # Send g-code block to grbl
-                s.write((l_block + '\n').encode())
+                self.s.write((l_block + '\n').encode())
 
                 while 1:
                     # Wait for grbl response with carriage return
-                    out = s.readline().strip().decode()
+                    out = self.s.readline().strip().decode()
 
                     if out.find('ok') >= 0:
                         log.debug(f"GRBL > {str(l_count)}: {out}")
@@ -617,6 +639,7 @@ class grbl:
             self.is_run = True
             g_count = 0
             c_line = []
+            rx_buffer_size = 128
             for line in data:
                 l_count += 1  # Iterate line counter
 
@@ -627,8 +650,8 @@ class grbl:
                 c_line.append(len(l_block) + 1)
                 out = ''
 
-                while sum(c_line) >= rx_buffer_size - 1 | s.inWaiting():
-                    out_temp = s.readline().strip().decode()  # Wait for grbl response
+                while sum(c_line) >= rx_buffer_size - 1 | self.s.inWaiting():
+                    out_temp = self.s.readline().strip().decode()  # Wait for grbl response
 
                     if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
                         log.debug(f"GRBL > {out_temp}")  # Debug response
@@ -645,13 +668,13 @@ class grbl:
                 data_to_send = l_block + '\n'
 
                 # Send g-code block to grbl
-                s.write(data_to_send.encode())
+                self.s.write(data_to_send.encode())
 
                 log.debug(f"GRBL < {str(l_count)}: {l_block}")
 
             # Wait until all responses have been received.
             while l_count > g_count:
-                out_temp = s.readline().strip().decode()  # Wait for grbl response
+                out_temp = self.s.readline().strip().decode()  # Wait for grbl response
 
                 if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
                     log.debug(f"GRBL > {out_temp}")  # Debug response
@@ -689,14 +712,6 @@ log, logs = setup_log()
 
 # GCODE parser settings
 # settings_mode = False  # Default False, must be True for settings
-rx_buffer_size = 128
-enable_status_reports = True  # Default True, can toggle monitoring
-report_interval = 1.0  # In seconds, if enable_status_reports is True
-gcode = ""
-s = []
-# g = ""
-connected = False  # Check whether backend is successfully connected to printer
-
 
 # Load selected gcode file into list
 # logging.debug("Loading supplied gcode")
@@ -715,24 +730,15 @@ w.connect()
 # Start webserver
 webserver().start()
 
-# # Connect grbl
+# Connect grbl
 g = grbl()  # GRBL object
 g.connect()  # Serial connection
 
-# if connected:
-#     # Set up monitoring thread
-#     g.monitor()
+# Connect gcode class
+gc = gcode()
 
-#     # Check for out of date grbl settings, and send if needed
-#     g.send_settings()
-
-# Check supplied GCODE if required
-# if args.check:
-#     log.info("Check mode enabled")
-#     log.info("Running full program check...")
-#     g.check_mode()  # Enable
-#     g.send(gcode)
-#     g.check_mode()  # Disable
+# Set up monitoring thread
+g.monitor()
 
 # Homing cycle
 # g.home()

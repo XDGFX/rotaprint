@@ -235,6 +235,10 @@ function send_gcode(data) {
 
 }
 
+function print_now() {
+    ws.send(payloader("PRN"))
+}
+
 // DATABASE
 
 // Get settings from database and update form values
@@ -421,8 +425,11 @@ function update_surface_speed() {
     max_rate_y = settings_table["$111"]
     warning_percentage = settings_table["warning_percentage"]
 
-    // speed = °/min * (2πr / 360)
+    // mm/min = °/min * (2πr / 360)
     speed = max_rate_y * (2 * Math.PI * radius / 360)
+
+    // mm = ° * (2πr / 360)
+    // deg = mm * (360 / 2πr)
 
     // Round to 4dp (function toFixed didn't always work for me)
     speed = Math.round(speed * 1000) / 1000
@@ -549,7 +556,7 @@ function toggle_advanced_settings() {
 
 changed = ""
 function check_changed(element) {
-    id = element.id.split("_")[1]
+    id = element.id.replace("setting_", "")
 
     old_value = String(settings_table[id])
     current_value = element.value
@@ -582,9 +589,9 @@ function check_changed(element) {
 }
 
 function set_default(input_id) {
-    id = input_id.split("_")[1]
+    id = input_id.replace("setting_", "")
 
-    default_value = default_settings[input_id.split("_")[1]]
+    default_value = default_settings[input_id.replace("setting_", "")]
     element = document.getElementById(input_id)
     element.value = default_value
     check_changed(element)

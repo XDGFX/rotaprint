@@ -14,6 +14,14 @@
             "help": "If Y surface speed is not within this percentage of X surface speed, a warning will be displayed, prompting the user to update the Y max rate."
         },
         {
+            "title": "Report Interval",
+            "id": "report_interval",
+            "unit": "s",
+            "advanced": false,
+            "category": "general",
+            "help": "How frequently the firmware is polled for position and status information. Recommended no greater than 5Hz (0.2s)"
+        },
+        {
             "title": "Length of Step Pulse",
             "id": "$0",
             "unit": "μs",
