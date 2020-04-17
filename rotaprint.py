@@ -398,9 +398,8 @@ class websocket:
                 try:
                     g.send(str(payload).splitlines(), True)
                     return "DONE"
-                except Exception as e:
-                    log.error("Failed to send command")
-                    log.error(e)
+                except:
+                    r.except_logger()
                     return "ERROR"
             else:
                 log.error(
@@ -561,7 +560,8 @@ class grbl:
             self.s.flushInput()  # Flush startup text in serial input
             self.connected = True
 
-        except Exception:
+        except:
+            r.except_logger()
             log.error("Unable to connect to printer!")
 
     def clear_lockout(self):

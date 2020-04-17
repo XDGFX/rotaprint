@@ -15,4 +15,4 @@ tests/js/*
 tests/three/OrbitControls.js
 tests/three/three.js
 
-!web/styles.css
+web/styles.css
