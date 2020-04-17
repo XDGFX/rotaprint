@@ -1,6 +1,7 @@
 {
     "categories": [
         "general",
+        "batch",
         "controller",
         "movement"
     ],
@@ -19,7 +20,47 @@
             "unit": "s",
             "advanced": false,
             "category": "general",
-            "help": "How frequently the firmware is polled for position and status information. Recommended no greater than 5Hz (0.2s)"
+            "help": "How frequently the firmware is polled for position and status information. Recommended no greater than 5Hz (0.2s). High polling frequencies may cause issues."
+        },
+        {
+            "title": "Z Height",
+            "id": "z_height",
+            "unit": "mm",
+            "advanced": false,
+            "category": "general",
+            "help": "Distance between zero (at microswitch), and the part axis, in the Z direction."
+        },
+        {
+            "title": "Z Lift",
+            "id": "z_lift",
+            "unit": "mm",
+            "advanced": false,
+            "category": "general",
+            "help": "How far the pen moves from the part when not printing."
+        },
+        {
+            "title": "Z Offset",
+            "id": "z_offset",
+            "unit": "mm",
+            "advanced": true,
+            "category": "general",
+            "help": "If the pen is too high or low when attempting to print, adjust this offset value. Positive values move the pen closer to the part, negative values move it further away."
+        },
+        {
+            "title": "Batch Origin",
+            "id": "batch_origin",
+            "unit": "mm",
+            "advanced": true,
+            "category": "batch",
+            "help": "Distance between batch axis zero, and the first part being aligned under the print head."
+        },
+        {
+            "title": "Batch Offset",
+            "id": "batch_offset",
+            "unit": "mm",
+            "advanced": true,
+            "category": "batch",
+            "help": "Distance between each component in batch axis."
         },
         {
             "title": "Length of Step Pulse",

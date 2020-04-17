@@ -96,8 +96,13 @@ ws.onopen = function (e) {
     // Generate page content
     generate_content()
 
+    // Reset log counter for new session
+    ws.send(payloader("RLC"))
+
     // Check connection to grbl
-    check_connected()
+    setTimeout(() => {
+        check_connected()
+    }, 3000);
 };
 
 // Function to call when message received by websocket
@@ -110,6 +115,20 @@ ws.onmessage = function (event) {
         console.log(`[message] Data received from server: (log update)`);
     } else {
         console.log(`[message] Data received from server: ${event.data}`);
+    }
+
+    if (payload == "ERROR") {
+        bulmaToast.toast({
+            message: "An error occured with command: ".concat(command).concat("\nCheck logs for more info."),
+            type: "is-danger",
+            position: "bottom-right",
+            dismissible: true,
+            closeOnClick: false,
+            duration: 99999999,
+            animate: { in: "fadeInRight", out: "fadeOutRight" }
+        });
+
+        return
     }
 
     switch (command) {
@@ -130,6 +149,9 @@ ws.onmessage = function (event) {
             break
         case "LOG":
             update_logs(payload);
+            break
+        case "PRN":
+            print_now(payload);
             break
     }
 };
@@ -235,7 +257,43 @@ function send_gcode(data) {
 
 }
 
-function print_now() {
+function print_now(data) {
+    if (data == "DONE") {
+        // Send notification success
+        bulmaToast.toast({
+            message: "Printing now!",
+            type: "is-success",
+            position: "bottom-right",
+            dismissible: true,
+            closeOnClick: false,
+            duration: 4000,
+            animate: { in: "fadeInRight", out: "fadeOutRight" }
+        });
+
+        return
+    }
+
+    // Get current print settings
+    div = document.querySelector("#primary\_settings\_column")
+
+    check_mode = div.querySelector("#switch_check_mode").value
+    radius = div.querySelector("#input_radius").value
+    length = div.querySelector("#input_length").value
+    batch = div.querySelector("#input_batch").value
+
+    data = JSON.stringify(
+        {
+            "check_mode": check_mode,
+            "radius": radius,
+            "length": length,
+            "batch": batch,
+        }
+    )
+
+    // Send current print settings
+    ws.send(payloader("SET", data))
+
+    // Print
     ws.send(payloader("PRN"))
 }
 
@@ -639,14 +697,15 @@ function modal_animation(which, toggle) {
             });
             return
         default:
-            animation_object.destroy()
+            if (typeof animation_object !== "undefined") {
+                animation_object.destroy()
+            }
             return
     }
 }
 
 // LOGS
 var quickviews = bulmaQuickview.attach(); // quickviews now contains an array of all Quickview instances
-force_scroll = true
 function update_logs(data) {
     update = document.getElementById("logs_auto_update").checked
     if (!update) {
@@ -660,9 +719,15 @@ function update_logs(data) {
         ws.send(payloader("LOG"))
     } else {
         data = data.replace(/(?:\r\n|\r|\n)/g, "<~>")
+        data = data.replace(/(<#>)/g, "\n")
         data = data.split("<~>")
 
-        table = "<table class=\"table log_table is-striped is-family-code\">"
+        if (elm.innerHTML == "") {
+            table = "<table class=\"table log_table is-striped is-family-code\">"
+        } else {
+            // table = elm.innerHTML
+            table = elm.innerHTML.slice(0, elm.innerHTML.length - 8)
+        }
 
         for (var i = 0; i < data.length - 2; i += 3) {
             hl = "class=\""

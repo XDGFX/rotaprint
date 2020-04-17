@@ -18,62 +18,144 @@ import re
 import asyncio
 import websockets
 import threading
+import concurrent.futures
 import logging
 import sqlite3
 import os
 import io
+import sys
+import traceback
+import math
 from json import dumps, loads
 
 
-def setup_log():
-    # Create normal logger
-    log = logging.getLogger("rotaprint")
-    log.setLevel(logging.DEBUG)
+class rotaprint:
+    # Setup threading pool
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=10)
 
-    # Create variable logger for GUI
-    log_capture_string = io.StringIO()
-    ch = logging.StreamHandler(log_capture_string)
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        '%(asctime)s<~>%(levelname)s<~>%(message)s', '%H:%M:%S')
-    ch.setFormatter(formatter)
-    log.addHandler(ch)
+    # Initialise variables
+    # Enables check mode to test gcode first
+    check_mode = ""
 
-    # Decrease output of external modules
-    logging.getLogger("websockets").setLevel(logging.WARNING)
-    logging.getLogger("werkzeug").setLevel(logging.WARNING)
+    # Radius of part to print on / mm
+    radius = ""
 
-    # if args.debug:
-    logging.basicConfig(format='%(name)-12s: %(levelname)-8s %(message)s')
+    # Length of part to print on / mm
+    length = ""
 
-    log.info("Successfully setup logging")
+    # Number of parts in batch / int
+    batch = ""
 
-    return log, log_capture_string
+    def setup_log(self):
+        # Create normal logger
+        log = logging.getLogger("rotaprint")
+        log.setLevel(logging.DEBUG)
+
+        # Number of characters already sent
+        self.log_history = 0
+
+        # Create variable logger for GUI
+        log_capture_string = io.StringIO()
+        ch = logging.StreamHandler(log_capture_string)
+        ch.setLevel(logging.DEBUG)
+        formatter = logging.Formatter(
+            '%(asctime)s<~>%(levelname)s<~>%(message)s', '%H:%M:%S')
+        ch.setFormatter(formatter)
+        log.addHandler(ch)
+
+        # Decrease output of external modules
+        logging.getLogger("websockets").setLevel(logging.WARNING)
+        logging.getLogger("werkzeug").setLevel(logging.WARNING)
+
+        # if args.debug:
+        logging.basicConfig(format='%(name)-12s: %(levelname)-8s %(message)s')
+
+        log.info("Successfully setup logging")
+
+        return log, log_capture_string
+
+    def except_logger(self):
+        exc_type, exc_value, tb = sys.exc_info()
+
+        error = traceback.format_exception(exc_type, exc_value, tb)
+
+        for line in error:
+            # Replace newline to prevent issues when displaying at frontend
+            line = line.replace("\n", "<#>")
+            log.error(line)
+
+    def print_sequence(self):
+        # Update gcode y values based on part diameter
+        gc.correct_dims()
+
+        # Submit gcode to printer
+        g.send(gc.gcode)
 
 
 class gcode:
     gcode = ""
 
-    def g0_g1_conversion(self):
-        # Convert all GCODE where printing (indicated by a feedrate change command) to G1
-        log.info("Converting print GCODE to G1")
-        printing = 0
+    # def g0_g1_conversion(self):
+    #     # Convert all GCODE where printing (indicated by a feedrate change command) to G1
+    #     log.info("Converting print GCODE to G1")
+    #     printing = 0
 
-        for idx, command in enumerate(self.gcode):
-            if command.startswith("G1 F"):
-                # Start of printing
-                printing = 1
-            elif command.startswith("G0 F"):
-                # End of printing
-                printing = 0
+    #     for idx, command in enumerate(self.gcode):
+    #         if command.startswith("G1 F"):
+    #             # Start of printing
+    #             printing = 1
+    #         elif command.startswith("G0 F"):
+    #             # End of printing
+    #             printing = 0
 
-            # Replace [G]0 with [G]1 on current line
-            if printing:
-                self.gcode[idx] = command[:1] + "1" + \
-                    command[2:]  # Replace G0 with G1
+    #         # Replace [G]0 with [G]1 on current line
+    #         if printing:
+    #             self.gcode[idx] = command[:1] + "1" + \
+    #                 command[2:]  # Replace G0 with G1
 
-    def correct_y(self):
-        gcode = 1
+    def correct_dims(self):
+        # Correct y and z values to take radius into account
+        for idx, line in enumerate(self.gcode):
+            # Alter Y value
+            m = re.search("Y([\d.]+)", line)
+
+            # If command contains Y
+            if m:
+                y = m.string[m.start(1):m.end(1)]
+                y = float(y)
+
+                # deg = mm * (360 / 2πr)
+                y = y * 360 / (2 * math.pi * r.radius)
+
+                y = round(y, 2)
+
+                new_line = line[:m.start(1)] + str(y) + line[m.end(1):]
+
+                self.gcode[idx] = new_line
+
+            # Alter Z value
+            m = re.search("Z([\d.]+)", line)
+
+            # If command contains Z
+            if m:
+                z = m.string[m.start(1):m.end(1)]
+                z = float(z)
+
+                # if drawing
+                if z == 1:
+                    # set Z to part outer radius, plus the offset
+                    z = db.settings["z_height"] - \
+                        r.radius + db.settings["z_offset"]
+                else:
+                    # set Z to part outer radius, plus the lift height
+                    z = db.settings["z_height"] - \
+                        r.radius - db.settings["z_lift"]
+
+                z = round(z, 2)
+
+                new_line = line[:m.start(1)] + str(z) + line[m.end(1):]
+
+                self.gcode[idx] = new_line
 
 
 class webserver:
@@ -148,6 +230,13 @@ class database:
         # --- General settings ---
         "warning_percentage": 10,
         "report_interval": 1,
+        "z_height": 20,
+        "z_offset": 0,
+        "z_lift": 10,
+
+        # --- Batch settings ---
+        "batch_origin": 100,
+        "batch_offset": 150,
 
         # --- Option defaults ---
         "length": 100,
@@ -238,9 +327,12 @@ class websocket:
             # hold = False
             # buffer = list()
             while True:
-                # Listen for new messages, and send incoming to the handler TODO make threaded
+                # Listen for new messages
                 data = await websocket.recv()
-                response = self.handler(data)
+
+                # Send incoming messages to the handler, in parallel with main process
+                future = r.pool.submit(self.handler, data)
+                response = future.result()
                 await websocket.send(response)
 
         asyncio.set_event_loop(asyncio.new_event_loop())
@@ -267,23 +359,20 @@ class websocket:
         def emergency_stop(self, payload):
             print("EST")
 
-        def buffer_hold(self, payload):
-            pass
+        def print_settings(self, payload):
+            try:
+                settings = loads(payload)
 
-        def buffer_release(self, payload):
-            pass
+                r.check_mode = [
+                    True if settings["check_mode"] == 'on' else False]
+                r.radius = float(settings["radius"])
+                r.length = float(settings["length"])
+                r.batch = int(settings["batch"])
 
-        def set_length(self, payload):
-            pass
-
-        def set_batch(self, payload):
-            pass
-
-        def set_radius(self, payload):
-            pass
-
-        def toggle_check_mode(self, payload):
-            pass
+                return "DONE"
+            except:
+                log.error("Could not assign print settings")
+                return "ERROR"
 
         def database_set(self, payload):
             # Update a database setting
@@ -304,7 +393,19 @@ class websocket:
             return "DONE"
 
         def send_manual(self, payload):
-            pass
+            # Send manual command to grbl
+            if g.connected:
+                try:
+                    g.send(str(payload).splitlines(), True)
+                    return "DONE"
+                except Exception as e:
+                    log.error("Failed to send command")
+                    log.error(e)
+                    return "ERROR"
+            else:
+                log.error(
+                    "Not connected to printer - could not update settings. Restart rotaprint!")
+                return "ERROR"
 
         def receive_gcode(self, payload):
             # Receive gcode, and load into global variable
@@ -317,13 +418,15 @@ class websocket:
             # Send all supplied GCODE to printer
             if gc.gcode == "":
                 log.error("No GCODE supplied; cannot print")
-                return "NO GCODE"
+                return "ERROR"
             else:
                 log.info("Sending gcode to printer...")
 
-                # gc.correct_y()
+                r.print_sequence()
+                return "DONE"
 
-                g.send(gc.gcode)
+        # def home(self, payload):
+        #     send
 
         def fetch_settings(self, payload):
             # Return all database settings in JSON format
@@ -346,29 +449,36 @@ class websocket:
         def return_logs(self, payload):
             # Return current log data to frontend
             log_contents = logs.getvalue()
-            return log_contents
+
+            new_logs = log_contents[r.log_history:]
+
+            r.log_history += len(new_logs)
+
+            return new_logs
+
+        def reset_logs_counter(self, payload):
+            r.log_history = 0
+
+            return "DONE"
 
         switcher = {
             "EST": emergency_stop,
-            "BFH": buffer_hold,
-            "BFR": buffer_release,
-            "LEN": set_length,
-            "BAT": set_batch,
-            "RAD": set_radius,
-            "CHK": toggle_check_mode,
+            "SET": print_settings,
             "DBS": database_set,
             "GRB": send_manual,
             "GCD": receive_gcode,
             "PRN": print_now,
+            # "HME": home,
             "FTS": fetch_settings,
             "RQV": fetch_value,
             "RCN": reconnect_printer,
             "LOG": return_logs,
+            "RLC": reset_logs_counter,
         }
 
         # Separate JSON string into command and payload
         data = loads(data)
-        command = data["command"]
+        command = data["command"].upper()
         payload = data["payload"]
 
         if not command == "LOG":
@@ -378,7 +488,12 @@ class websocket:
                 log.debug(f'WSKT > {command} (long payload)')
 
         # Call respective command using switcher
-        response = switcher[command](self, payload)
+        try:
+            response = switcher[command](self, payload)
+        except:
+            r.except_logger()
+            # log.exception("That command didn't work".replace("File", "yeeyt"))
+            response = "ERROR"
 
         if not command == "LOG":
             if len(response) < 50:
@@ -426,20 +541,22 @@ class grbl:
         try:
             # Connect to serial
             log.debug(f"Connecting on port {self.port}...")
-            self.s = serial.Serial(self.port, 115200, timeout=1)
+            # self.s = serial.Serial(self.port, 115200, timeout=1)
+            self.s = serial.Serial(self.port, 115200)
+
             log.info("Connection success!")
 
             # Wake up grbl
             log.debug("GRBL < \"\\r\\n\\r\\n\"")
             self.s.write("\r\n\r\n".encode())
 
-            temp_out = self.s.readline().strip().decode()
-            if temp_out.find('error:9') >= 0:
-                self.clear_lockout()
+            # temp_out = self.s.readline().strip().decode()
+            # if temp_out.find('error:9') >= 0:
+            #     self.clear_lockout()
             time.sleep(2)  # Wait for grbl to initialize
 
-            # Clear any lockout alarms
-            self.clear_lockout()
+            # # Clear any lockout alarms
+            # self.clear_lockout()
 
             self.s.flushInput()  # Flush startup text in serial input
             self.connected = True
@@ -449,17 +566,15 @@ class grbl:
 
     def clear_lockout(self):
         log.warning("Lockout error detected! Attempting to override...")
-        log.debug("GRBL < $X")
-        self.s.write("$X\n".encode())
+        self.send(["$X"], True)
 
     def send_settings(self):
         log.info("Checking if firmware settings need updating...")
-        log.debug("GRBL < $$")
-        self.s.write("$$".encode())
+        self.send(["$$"], True)
 
         # In testing, GRBL would often take several lines to start responding,
         # this should flush that so program will not hang
-        for _ in range(1, 20):
+        for i in range(0, 10):
             self.s.write("\n".encode())
 
         # Wait until current settings are received
@@ -546,8 +661,7 @@ class grbl:
     def home(self):
         # Built-in GRBL homing functionality
         log.info("Homing machine...")
-        log.debug("GRBL < $H")
-        self.s.write('$H\n'.encode())
+        self.send(['$H'], True)
 
     def send_status_query(self):
         # Built in GRBL status report, in format:
@@ -555,7 +669,7 @@ class grbl:
         # Recommended query frequency no more than 5Hz
         # log.debug("Sending status query...")
         # log.debug("GRBL < ?")
-        self.s.write('?'.encode())
+        self.send(['?'], True)
 
     def periodic_timer(self):
         while True:
@@ -567,16 +681,14 @@ class grbl:
         self.is_run = False
         # if enable_status_reports:
         log.info("Starting firmware log daemon...")
+
         timerThread = threading.Thread(target=self.periodic_timer)
         timerThread.daemon = True
         timerThread.start()
-        # else:
-        #     log.info("Logging disabled by <enable_status_reports>")
 
     def check_mode(self):
         log.info('Toggling grbl check-mode...')
-        log.debug("GRBL < $C")
-        self.s.write('$C\n')
+        self.send(['$C'], True)
 
         # Invert checkmode variable
         self.check != self.check
@@ -597,60 +709,83 @@ class grbl:
                 log.debug(f'GRBL > {out}')
 
     def send(self, data, settings_mode=False):
-        log.info("Sending data to printer...")
-        l_count = 0
-        error_count = 0
-        start_time = time.time()
-        if settings_mode:
-            # Send settings file via simple call-response streaming method. Settings must be streamed
-            # in this manner since the EEPROM accessing cycles shut-off the serial interrupt.
+        def _sender(self, **args):
+            l_count = 0
+            error_count = 0
+            start_time = time.time()
 
-            log.debug("Settings mode")
+            if settings_mode:
+                # Send settings file via simple call-response streaming method. Settings must be streamed
+                # in this manner since the EEPROM accessing cycles shut-off the serial interrupt.
 
-            for line in data:
-                l_count += 1  # Iterate the line counter
-                l_block = line.strip()  # Strip all EOL characters for consistency
+                for line in data:
+                    l_count += 1  # Iterate the line counter
+                    l_block = line.strip()  # Strip all EOL characters for consistency
 
-                log.debug(f"GRBL < {str(l_count)}: {l_block}")
+                    # Asterisk indicates code is sent using settings mode
+                    log.debug(f"GRBL <* {str(l_count)}: {l_block}")
 
-                # Send g-code block to grbl
-                self.s.write((l_block + '\n').encode())
+                    # Send g-code block to grbl
+                    self.s.write((l_block + '\n').encode())
 
-                while 1:
-                    # Wait for grbl response with carriage return
-                    out = self.s.readline().strip().decode()
+                    while 1:
+                        # Wait for grbl response with carriage return
+                        out = self.s.readline().strip().decode()
 
-                    if out.find('ok') >= 0:
-                        log.debug(f"GRBL > {str(l_count)}: {out}")
-                        break
-                    elif out.find('error') >= 0:
-                        log.warning(f"GRBL > {str(l_count)}: {out}")
-                        error_count += 1
-                        break
-                    else:
-                        log.debug(f"GRBL > {out}")
-        else:
-            # Send g-code program via a more agressive streaming protocol that forces characters into
-            # Grbl's serial read buffer to ensure Grbl has immediate access to the next g-code command
-            # rather than wait for the call-response serial protocol to finish. This is done by careful
-            # counting of the number of characters sent by the streamer to Grbl and tracking Grbl's
-            # responses, such that we never overflow Grbl's serial read buffer.
-            log.debug("Stream mode")
-            self.is_run = True
-            g_count = 0
-            c_line = []
-            rx_buffer_size = 128
-            for line in data:
-                l_count += 1  # Iterate line counter
+                        if out.find('ok') >= 0:
+                            log.debug(f"GRBL > {str(l_count)}: {out}")
+                            break
+                        elif out.find('error') >= 0:
+                            log.warning(f"GRBL > {str(l_count)}: {out}")
+                            error_count += 1
+                            break
+                        else:
+                            log.debug(f"GRBL > {out}")
+            else:
+                # Send g-code program via a more agressive streaming protocol that forces characters into
+                # Grbl's serial read buffer to ensure Grbl has immediate access to the next g-code command
+                # rather than wait for the call-response serial protocol to finish. This is done by careful
+                # counting of the number of characters sent by the streamer to Grbl and tracking Grbl's
+                # responses, such that we never overflow Grbl's serial read buffer.
+                log.debug("Stream mode")
+                self.is_run = True
+                g_count = 0
+                c_line = []
+                rx_buffer_size = 128
+                for line in data:
+                    l_count += 1  # Iterate line counter
 
-                # Strip comments/spaces/new line and capitalize
-                l_block = re.sub(r'\s|\(.*?\)', '', line).upper()
+                    # Strip comments/spaces/new line and capitalize
+                    l_block = re.sub(r'\s|\(.*?\)', '', line).upper()
 
-                # Track number of characters in grbl serial read buffer
-                c_line.append(len(l_block) + 1)
-                out = ''
+                    # Track number of characters in grbl serial read buffer
+                    c_line.append(len(l_block) + 1)
+                    out = ''
 
-                while sum(c_line) >= rx_buffer_size - 1 | self.s.inWaiting():
+                    while sum(c_line) >= rx_buffer_size - 1 | self.s.inWaiting():
+                        out_temp = self.s.readline().strip().decode()  # Wait for grbl response
+
+                        if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
+                            log.debug(f"GRBL > {out_temp}")  # Debug response
+                        else:
+                            if out_temp.find('error') >= 0:
+                                error_count += 1
+
+                            g_count += 1  # Iterate g-code counter
+                            log.debug(f"GRBL > {str(g_count)}: {out_temp}")
+
+                            # Delete the block character count corresponding to the last 'ok'
+                            del c_line[0]
+
+                    data_to_send = l_block + '\n'
+
+                    # Send g-code block to grbl
+                    self.s.write(data_to_send.encode())
+
+                    log.debug(f"GRBL < {str(l_count)}: {l_block}")
+
+                # Wait until all responses have been received.
+                while l_count > g_count:
                     out_temp = self.s.readline().strip().decode()  # Wait for grbl response
 
                     if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
@@ -665,83 +800,51 @@ class grbl:
                         # Delete the block character count corresponding to the last 'ok'
                         del c_line[0]
 
-                data_to_send = l_block + '\n'
+            end_time = time.time()
+            log.info(f"Time elapsed: {str(end_time-start_time)}")
+            self.is_run = False
 
-                # Send g-code block to grbl
-                self.s.write(data_to_send.encode())
-
-                log.debug(f"GRBL < {str(l_count)}: {l_block}")
-
-            # Wait until all responses have been received.
-            while l_count > g_count:
-                out_temp = self.s.readline().strip().decode()  # Wait for grbl response
-
-                if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
-                    log.debug(f"GRBL > {out_temp}")  # Debug response
+            if self.check:
+                log.info("Checking response...")
+                if error_count > 0:
+                    log.error(
+                        f"Check failed: {error_count} errors found! See output for details.")
+                    quit()
                 else:
-                    if out_temp.find('error') >= 0:
-                        error_count += 1
-
-                    g_count += 1  # Iterate g-code counter
-                    log.debug(f"GRBL > {str(g_count)}: {out_temp}")
-
-                    # Delete the block character count corresponding to the last 'ok'
-                    del c_line[0]
-
-        end_time = time.time()
-        log.info(f"Time elapsed: {str(end_time-start_time)}")
-        self.is_run = False
-
-        if self.check:
-            log.info("Checking response...")
-            if error_count > 0:
-                log.error(
-                    f"Check failed: {error_count} errors found! See output for details.")
-                quit()
+                    log.info("Check passed: No errors found in g-code program.")
             else:
-                log.info("Check passed: No errors found in g-code program.")
-        else:
-            log.debug(
-                "Wait until Grbl completes buffered g-code blocks before exiting.")
+                log.debug(
+                    "Wait until Grbl completes buffered g-code blocks before exiting.")
+
+        # Submit task to pool
+        r.pool.submit(_sender, self, data=data, settings_mode=settings_mode)
 
 
-log, logs = setup_log()
+if __name__ == "__main__":
+    # --- SETUP SEQUENCE ---
+    # Connect general use class
+    r = rotaprint()
 
+    # Setup logging
+    log, logs = r.setup_log()
 
-# --- Variable Initialisation ---
+    # Connect backend database
+    db = database()
+    db.connect()
 
-# GCODE parser settings
-# settings_mode = False  # Default False, must be True for settings
+    # Start GUI websocket
+    w = websocket()
+    w.connect()
 
-# Load selected gcode file into list
-# logging.debug("Loading supplied gcode")
-# gcode = gcode_load(args.gcode)
-# Convert commands where printing to G1 to indicate printing
-# gcode = g0_g1_conversion(gcode)
+    # Start webserver
+    webserver().start()
 
-# Connect backend database
-db = database()
-db.connect()
+    # Connect grbl
+    g = grbl()  # GRBL object
+    g.connect()  # Serial connection
 
-# Start GUI websocket
-w = websocket()
-w.connect()
+    # Connect gcode class
+    gc = gcode()
 
-# Start webserver
-webserver().start()
-
-# Connect grbl
-g = grbl()  # GRBL object
-g.connect()  # Serial connection
-
-# Connect gcode class
-gc = gcode()
-
-# Set up monitoring thread
-g.monitor()
-
-# Homing cycle
-# g.home()
-
-# Close serial port
-# s.close()
+    # Set up monitoring thread
+    g.monitor()

@@ -5,6 +5,9 @@ node_modules/
 grbl-1.1h/*
 !grbl-1.1h/simport.sh
 !grbl-1.1h/grbl_sim.exe
+
+!grbl-1.1h/simport_3axis.sh
+!grbl-1.1h/grbl_sim_3axis.exe
 rotaprint.db
 .DS_Store
 
