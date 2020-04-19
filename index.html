@@ -91,7 +91,7 @@
             <!-- Level right -->
             <div class="level-right">
                 <div class="container">
-                    <i class="fas fa-cogs fa-2x icon_button" onclick="show_settings()"></i>
+                    <i class="fas fa-cogs fa-2x icon_button" onclick="CG.show_settings()"></i>
                 </div>
             </div>
         </nav>
@@ -124,7 +124,7 @@
                 <div>
                     <div class="columns is-vcentered">
                         <div class="column">
-                            <button class="button" onclick="print_now()">Print</button>
+                            <button class="button" onclick="COM.print_now()">Print</button>
                         </div>
                         <div class="column" id="primary_settings_column">
                             <div class="field">
@@ -132,7 +132,7 @@
                                 <input id="switch_check_mode" type="checkbox" class="switch is-rounded">
                                 <label for="switch_check_mode"></label>
                                 <a
-                                    onclick="show_help('modal_check_mode'), modal_animation('animation_check_mode', 'show')">?</a>
+                                    onclick="CG.show_help('modal_check_mode'), CG.modal_animation('animation_check_mode', 'show')">?</a>
                             </div>
 
                             <div class="columns">
@@ -142,7 +142,7 @@
                                         <div class="field has-addons" style="margin: 0;">
                                             <p class="control">
                                                 <input id="input_radius" class="input" type="number"
-                                                    style="width: 100px;" min="0" onchange="update_surface_speed()">
+                                                    style="width: 100px;" min="0" onchange="COM.update_surface_speed()">
                                             </p>
                                             <p class="control">
                                                 <a class="button is-static" style="width: 60px;">mm</a>
@@ -203,19 +203,19 @@
                         <div class="field has-addons" style="margin-bottom: 0;">
                             <p class="control" style="width: 100px;">
                                 <input class="input is-danger" type="text" id="manual_command"
-                                    onkeydown="return send_custom_code(event)" placeholder="CMD" maxlength="3">
+                                    onkeydown="COM.send_custom_code(event)" placeholder="CMD" maxlength="3">
                             </p>
                             <p class="control" style="width: 100%;">
                                 <input class="input is-danger" type="text" id="manual_payload"
-                                    onkeydown="return send_custom_code(event)" placeholder="PAYLOAD">
+                                    onkeydown="COM.send_custom_code(event)" placeholder="PAYLOAD">
                             </p>
                             <p class="control">
-                                <a class="button is-danger" onclick="send_custom_code('FORCE')">Send</a>
+                                <a class="button is-danger" onclick="COM.send_custom_code('FORCE')">Send</a>
                             </p>
                         </div>
 
                         <p class="help">Manually send a command to the backend. Command reference <a
-                                onclick="show_help('modal_manual_command')">here</a>.</p>
+                                onclick="CG.show_help('modal_manual_command')">here</a>.</p>
 
                     </div>
                 </div>
@@ -226,18 +226,19 @@
 
     <!-- MACHINE SETTINGS -->
     <section id="machine_settings" class="section overlay is-hidden has-background-white-bis">
-        <a onclick="hide_settings()" class=" is-pulled-right delete"></a>
+        <a onclick="CG.hide_settings()" class=" is-pulled-right delete"></a>
 
         <div class="container">
             <div class="columns is-centered">
                 <div class="column is-one-quarter">
                     <div class="menu sticky">
-                        <p class="menu-label"><b>General</b></p>
                         <ul id="settings_menu" class="menu-list">
+                            <p class="menu-label"><b>General</b></p>
                             <li><a class="menu_button is-active" href="#settings_connection">Printer Connection</a></li>
                             <li><a class="menu_button" href="#settings_default">Default Settings</a></li>
                             <li><a class="menu_button" href="#settings_general">General Settings</a></li>
                             <li><a class="menu_button" href="#settings_batch">Batch Settings</a></li>
+                            <p class="menu-label"><b>Firmware</b></p>
                             <li><a class="menu_button" href="#settings_controller">Controller Settings</a></li>
                             <li><a class="menu_button" href="#settings_movement">Movement Settings</a></li>
                         </ul>
@@ -247,11 +248,11 @@
                         <div class="columns">
                             <div class="column is-8" style="padding: 0.5em">
                                 <button disabled id="settings_apply" class="button is-danger is-fullwidth"
-                                    onclick="send_new_settings('CHECK')">Apply
+                                    onclick="COM.send_new_settings('CHECK')">Apply
                                     Settings</button>
                             </div>
                             <div class="column is-narrow" style="padding: 0.5em">
-                                <button onclick="hide_settings()" class="button">Cancel</button>
+                                <button onclick="CG.hide_settings()" class="button">Cancel</button>
                             </div>
                         </div>
 
@@ -274,13 +275,13 @@
                             <label class="label">Communication Port <code>port</code></label>
                             <div class="field has-addons" style="margin: 0;">
                                 <p class="control has-icons-left is-expanded">
-                                    <input id="setting_port" class="input" type="text" oninput="check_changed(this)">
+                                    <input id="setting_port" class="input" type="text" oninput="CG.check_changed(this)">
                                     <span class="icon is-small is-left">
                                         <i class="fas fa-code"></i>
                                     </span>
                                 </p>
                                 <p class="control">
-                                    <button class="button" onclick="check_connected()">Check</button>
+                                    <button class="button" onclick="COM.check_connected()">Check</button>
                                 </p>
                             </div>
                             <p class="help">This is the serial port used to communicate with the printer. It is
@@ -298,7 +299,7 @@
                         <div class="field has-addons" style="margin: 0;">
                             <p class="control">
                                 <input id="setting_length" class="input" type="number" style="width: 100px;" min="0"
-                                    oninput="check_changed(this)">
+                                    oninput="CG.check_changed(this)">
                             </p>
                             <p class="control">
                                 <a class="button is-static" style="width: 60px;">mm</a>
@@ -312,7 +313,7 @@
                         <div class="field has-addons" style="margin: 0;">
                             <p class="control">
                                 <input id="setting_radius" class="input" type="number" style="width: 100px;" min="0"
-                                    oninput="check_changed(this)">
+                                    oninput="CG.check_changed(this)">
                             </p>
                             <p class="control">
                                 <a class="button is-static" style="width: 60px;">mm</a>
@@ -325,7 +326,7 @@
                         <label class="label">Batch Size <code>batch</code></label>
                         <p class="control is-expanded">
                             <input id="setting_batch" class="slider is-fullwidth" step="1" min="1" max="5" type="range"
-                                oninput="check_changed(this)">
+                                oninput="CG.check_changed(this)">
                             <ul class="range-labels has-text-grey-light">
                                 <li style="display:inline;">1</li>
                                 <li style="display:inline;">2</li>

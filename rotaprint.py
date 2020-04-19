@@ -59,7 +59,7 @@ class rotaprint:
         ch = logging.StreamHandler(log_capture_string)
         ch.setLevel(logging.DEBUG)
         formatter = logging.Formatter(
-            '%(asctime)s<~>%(levelname)s<~>%(message)s', '%H:%M:%S')
+            '<*>%(asctime)s<~>%(levelname)s<~>%(message)s', '%H:%M:%S')
         ch.setFormatter(formatter)
         log.addHandler(ch)
 
@@ -231,6 +231,7 @@ class database:
         "warning_percentage": 10,
         "report_interval": 1,
         "polling_interval": 100,
+        "log_history": 500,
         "z_height": 20,
         "z_offset": 0,
         "z_lift": 10,
@@ -570,6 +571,8 @@ class grbl:
             self.s.flushInput()  # Flush startup text in serial input
             self.connected = True
 
+            self.send_settings()
+
         except:
             r.except_logger()
             log.error("Unable to connect to printer!")
@@ -580,11 +583,12 @@ class grbl:
 
     def send_settings(self):
         log.info("Checking if firmware settings need updating...")
-        self.send(["$$"], True)
+        log.debug("GRBL <* $$")
+        self.s.write("$$".encode())
 
         # In testing, GRBL would often take several lines to start responding,
         # this should flush that so program will not hang
-        for i in range(0, 10):
+        for i in range(0, 20):
             self.s.write("\n".encode())
 
         # Wait until current settings are received
@@ -738,7 +742,7 @@ class grbl:
                     # Send g-code block to grbl
                     self.s.write((l_block + '\n').encode())
 
-                    while 1:
+                    while True:
                         # Wait for grbl response with carriage return
                         out = self.s.readline().strip().decode()
 
@@ -751,6 +755,7 @@ class grbl:
                             break
                         else:
                             log.debug(f"GRBL > {out}")
+
             else:
                 # Send g-code program via a more agressive streaming protocol that forces characters into
                 # Grbl's serial read buffer to ensure Grbl has immediate access to the next g-code command
@@ -822,9 +827,6 @@ class grbl:
                     quit()
                 else:
                     log.info("Check passed: No errors found in g-code program.")
-            else:
-                log.debug(
-                    "Wait until Grbl completes buffered g-code blocks before exiting.")
 
         # Submit task to pool
         r.pool.submit(_sender, self, data=data, settings_mode=settings_mode)

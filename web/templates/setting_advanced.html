@@ -21,7 +21,7 @@
                 <div class="field has-addons" style="margin: 0;">
                     <p class="control">
                         <input id="setting_{{id}}" class="input" type="number" style="width: 100px;"
-                            oninput="check_changed(this)">
+                            oninput="CG.check_changed(this)">
                     </p>
                     <p class="control">
                         <a class="button is-static" style="width: 60px;">{{unit}}</a>
@@ -32,7 +32,7 @@
             <!-- Default button -->
             <div class="column" style="padding: 0;">
                 <p class="control">
-                    <button disabled onclick="set_default('setting_{{id}}')"
+                    <button disabled onclick="CG.set_default('setting_{{id}}')"
                         class="button is-pulled-right advanced_setting">Default</button>
                 </p>
             </div>

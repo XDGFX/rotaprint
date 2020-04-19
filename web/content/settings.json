@@ -31,6 +31,14 @@
             "help": "How frequently the GUI requests updates (including logs) from the backend. Shorter intervals means messages are more up-to-date."
         },
         {
+            "title": "Log History Length",
+            "id": "log_history",
+            "unit": "int",
+            "advanced": false,
+            "category": "general",
+            "help": "Maximum logs to keep in logs window"
+        },
+        {
             "title": "Z Height",
             "id": "z_height",
             "unit": "mm",
@@ -92,7 +100,7 @@
             "unit": "mask",
             "advanced": true,
             "category": "controller",
-            "help": "Used to invert some or all stepper driver pulses. By default, a step event starts low, goes high, and then resets low again. When inverted, normal is high and pulse is low. <a onclick=\"show_help('modal_mask')\">View mask table.</a>"
+            "help": "Used to invert some or all stepper driver pulses. By default, a step event starts low, goes high, and then resets low again. When inverted, normal is high and pulse is low. <a onclick=\"CG.show_help('modal_mask')\">View mask table.</a>"
         },
         {
             "title": "Direction Port Invert",
@@ -100,7 +108,7 @@
             "unit": "mask",
             "advanced": false,
             "category": "controller",
-            "help": "Invert the direction signal for each axis. Used if one axis is reverse what is expected. <a onclick=\"show_help('modal_mask')\">View mask table.</a>"
+            "help": "Invert the direction signal for each axis. Used if one axis is reverse what is expected. <a onclick=\"CG.show_help('modal_mask')\">View mask table.</a>"
         },
         {
             "title": "Step Enable Invert",
@@ -182,7 +190,7 @@
             "unit": "mask",
             "advanced": false,
             "category": "controller",
-            "help": "By default, firmware assumes all homing limit switches are in the positive direction. This will allow axes to have limit switches instead, in the negative direction. <a onclick=\"show_help('modal_mask')\">View mask table.</a>"
+            "help": "By default, firmware assumes all homing limit switches are in the positive direction. This will allow axes to have limit switches instead, in the negative direction. <a onclick=\"CG.show_help('modal_mask')\">View mask table.</a>"
         },
         {
             "title": "Homing Feed Rate",

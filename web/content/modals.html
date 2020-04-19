@@ -10,33 +10,33 @@
 -->
 
 <div class="modal modal-fx-fadeInScale" id="modal_check_mode">
-    <div class="modal-background" onclick="hide_help(this)"></div>
+    <div class="modal-background" onclick="CG.hide_help(this)"></div>
     <div class="modal-content">
         <header class="modal-card-head">
             <p class="modal-card-title">Check Mode</p><button class="delete"
-                onclick="hide_help(this.parentElement.parentElement)"></button>
+                onclick="CG.hide_help(this.parentElement.parentElement)"></button>
         </header>
         <section class="modal-card-body"><strong>Check mode</strong> is used to verify GCODE files are accepted by the
             printer,before actual printing occurs. By enabling <b>check mode</b> the GCODE will be streamed to the
             printer asnormal, but no movement will occur. <br><br>
             <div id="animation_check_mode"></div>An output log will be presented once complete (will take as long as a
-            normal print), forcheckingand verification. If you are happy with the output, disable check mode for real
+            normal print), for checking and verification. If you are happy with the output, disable check mode for real
             printing.
         </section>
         <footer class="modal-card-foot"><button class="button"
-                onclick="hide_help(this.parentElement.parentElement)">Ok</button></footer>
+                onclick="CG.hide_help(this.parentElement.parentElement)">Ok</button></footer>
     </div>
 </div>
 
 <div class="modal modal-fx-fadeInScale" id="modal_mask">
-    <div class="modal-background" onclick="hide_help(this)"></div>
+    <div class="modal-background" onclick="CG.hide_help(this)"></div>
     <div class="modal-content">
         <header class="modal-card-head">
             <p class="modal-card-title">Mask Settings</p><button class="delete"
-                onclick="hide_help(this.parentElement.parentElement)"></button>
+                onclick="CG.hide_help(this.parentElement.parentElement)"></button>
         </header>
         <section class="modal-card-body"><b>Mask</b> settings store printer axes as bit flags. The setting value
-            represents a mask as shownbelow.<div class="columns is-centered">
+            represents a mask as shown below.<div class="columns is-centered">
                 <div class="column is-narrow">
                     <table class="table has-text-centered">
                         <thead>
@@ -312,16 +312,16 @@
             </div>
         </section>
         <footer class="modal-card-foot"><button class="button"
-                onclick="hide_help(this.parentElement.parentElement)">Ok</button></footer>
+                onclick="CG.hide_help(this.parentElement.parentElement)">Ok</button></footer>
     </div>
 </div>
 
 <div class="modal modal-fx-fadeInScale" id="modal_confirm_settings">
-    <div class="modal-background" onclick="hide_help(this)"></div>
+    <div class="modal-background" onclick="CG.hide_help(this)"></div>
     <div class="modal-content">
         <header class="modal-card-head">
             <p class="modal-card-title">Confirmation of Changes</p><button class="delete"
-                onclick="hide_help(this.parentElement.parentElement)"></button>
+                onclick="CG.hide_help(this.parentElement.parentElement)"></button>
         </header>
         <section class="modal-card-body">
             <table class="table has-text-centered">
@@ -336,17 +336,17 @@
             </table>
         </section>
         <footer class="modal-card-foot"><button id="confirm_settings_button" disabled class="button is-danger"
-                onclick="send_new_settings('CONFIRM'); hide_help(this.parentElement.parentElement); hide_settings()"></button><button
-                class="button" onclick="hide_help(this.parentElement.parentElement)">Cancel</button></footer>
+                onclick="COM.send_new_settings('CONFIRM'); CG.hide_help(this.parentElement.parentElement); CG.hide_settings('FORCE')"></button><button
+                class="button" onclick="CG.hide_help(this.parentElement.parentElement)">Cancel</button></footer>
     </div>
 </div>
 
 <div class="modal modal-fx-fadeInScale" id="modal_manual_command">
-    <div class="modal-background" onclick="hide_help(this)"></div>
+    <div class="modal-background" onclick="CG.hide_help(this)"></div>
     <div class="modal-content">
         <header class="modal-card-head">
             <p class="modal-card-title">Manual Command</p><button class="delete"
-                onclick="hide_help(this.parentElement.parentElement)"></button>
+                onclick="CG.hide_help(this.parentElement.parentElement)"></button>
         </header>
         <section class="modal-card-body">You can manually send commands to the backend for testing and debugging. It is
             recommended to keepthe logs window open while using this. Incorrect commands can break the backend and
@@ -455,6 +455,6 @@
             </table>
         </section>
         <footer class="modal-card-foot"><button class="button"
-                onclick="hide_help(this.parentElement.parentElement)">Ok</button></footer>
+                onclick="CG.hide_help(this.parentElement.parentElement)">Ok</button></footer>
     </div>
 </div>
