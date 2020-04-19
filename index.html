@@ -43,8 +43,7 @@
         </div>
 
         <!-- Show logs button -->
-        <button id="logs_quickview_button" class="button is-medium" data-show="quickview" data-target="logs_quickview"
-            onclick="update_logs('FORCE')">
+        <button id="logs_quickview_button" class="button is-medium" data-show="quickview" data-target="logs_quickview">
             <span class="icon is-small">
                 <i class="fas fa-stream"></i>
             </span>
@@ -68,7 +67,7 @@
             <footer class="quickview-footer">
                 <div class="field">
                     <input id="logs_auto_update" type="checkbox" name="switchRoundedDefault" class="switch is-rounded"
-                        checked="checked" autocomplete="off" onchange="update_logs('FORCE')">
+                        checked="checked" autocomplete="off" onchange="COM.update_logs()">
                     <label for="logs_auto_update">Auto update</label>
                 </div>
         </div>

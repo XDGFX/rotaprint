@@ -81,7 +81,6 @@ class rotaprint:
 
         for line in error:
             # Replace newline to prevent issues when displaying at frontend
-            line = line.replace("\n", "<#>")
             log.error(line)
 
     def print_sequence(self):
@@ -382,6 +381,7 @@ class websocket:
                 return "DONE"
             except:
                 log.error("Could not assign print settings")
+                r.except_logger()
                 return "ERROR"
 
         def database_set(self, payload):
@@ -502,7 +502,6 @@ class websocket:
             response = switcher[command](self, payload)
         except:
             r.except_logger()
-            # log.exception("That command didn't work".replace("File", "yeeyt"))
             response = "ERROR"
 
         if not command == "LOG":
@@ -543,6 +542,7 @@ class grbl:
             self.s.close()
             self.connected = False
         except:
+            r.except_logger()
             log.warning("Could not disconnect")
         self.connect()
 
@@ -574,8 +574,8 @@ class grbl:
             self.send_settings()
 
         except:
-            r.except_logger()
             log.error("Unable to connect to printer!")
+            r.except_logger()
 
     def clear_lockout(self):
         log.warning("Lockout error detected! Attempting to override...")
@@ -599,7 +599,7 @@ class grbl:
         while not temp_out.startswith("$"):
             # Wait for settings to start receiving
 
-            if timeout_counter > 20:
+            if timeout_counter > 10:
                 # Timeout condition
                 log.error("Printer communication timeout while reading settings")
                 log.info("Will reconnect in an attempt to fix")
@@ -683,7 +683,10 @@ class grbl:
         # Recommended query frequency no more than 5Hz
         # log.debug("Sending status query...")
         # log.debug("GRBL < ?")
-        self.send(['?'], True)
+        try:
+            self.s.write('?'.encode())
+        except:
+            r.except_logger()
 
     def periodic_timer(self):
         while True:
@@ -844,6 +847,9 @@ if __name__ == "__main__":
     db = database()
     db.connect()
 
+    # Connect gcode class
+    gc = gcode()
+
     # Start GUI websocket
     w = websocket()
     w.connect()
@@ -854,9 +860,6 @@ if __name__ == "__main__":
     # Connect grbl
     g = grbl()  # GRBL object
     g.connect()  # Serial connection
-
-    # Connect gcode class
-    gc = gcode()
 
     # Set up monitoring thread
     g.monitor()

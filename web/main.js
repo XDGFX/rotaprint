@@ -72,6 +72,9 @@ class CG {
 
         // Update settings page
         COM.update_settings()
+
+        // Initialise log requester
+        COM.get_logs("FORCE")
     }
 
     // Enter html for static pages
@@ -311,7 +314,7 @@ class CG {
 // All functions required for communication over websocket.
 // No HTML modification, or variable storage in this class.
 class WS {
-    static start() {
+    static async start() {
         // Initialise websocket
         this.ws = new WebSocket("ws://localhost:8765");
 
@@ -326,11 +329,11 @@ class WS {
                 document.getElementById("pageloader").classList.remove('is-active');
             }, 1000);
 
-            // Generate page content
-            CG.generate_content()
-
             // Reset log counter for new session
             WS.ws.send(COM.payloader("RLC"))
+
+            // Generate page content
+            CG.generate_content()
 
             // Check connection to grbl
             setTimeout(() => {
@@ -392,11 +395,8 @@ class WS {
                 case "DBS":
                     COM.send_new_settings(payload);
                     break
-                case "ECO":
-                    echo_chamber(payload);
-                    break
                 case "LOG":
-                    update_logs(payload);
+                    COM.get_logs(payload);
                     break
                 case "PRN":
                     COM.print_now(payload);
@@ -427,6 +427,8 @@ class WS {
             // Log error message
             console.log(`[error] ${error.message}`);
         };
+
+        bulmaQuickview.attach();
     }
 
     // Checks if another websocket connection is already open
@@ -543,11 +545,6 @@ class COM {
             }
         }
 
-        // Update default settings once only
-        if (this.default_settings == null) {
-            this.default_settings = JSON.parse(data[1])
-        }
-
         // Update homepage settings with current defaults
         container = document.getElementById("primary_settings_column")
         for (const key of Object.keys(this.settings_table)) {
@@ -557,11 +554,16 @@ class COM {
                 .replace(/_/g, "\\_")
             )
             if (id != null) {
-                // Only update if new session
-                if (id.value == "") {
+                // Check if this is a fresh session, only update if true
+                if (this.default_settings == null) {
                     id.value = this.settings_table[key]
                 }
             }
+        }
+
+        // Update default settings once only
+        if (this.default_settings == null) {
+            this.default_settings = JSON.parse(data[1])
         }
 
         // Update current print speed based on new settings
@@ -781,42 +783,77 @@ class COM {
             this.check_connected();
         }, 1000);
     }
-}
 
-// LOGS
-force_scroll = true
-var quickviews = bulmaQuickview.attach(); // quickviews now contains an array of all Quickview instances
-function update_logs(data) {
-    update = document.getElementById("logs_auto_update").checked
-    if (!update) {
-        return
-    }
-
-    elm = document.getElementById("logs_div")
-    scroller = elm.parentElement;
-
-    if (data == "FORCE") {
-        WS.ws.send(COM.payloader("LOG"))
-    } else {
-        data = data.replace(/(?:\r\n|\r|\n)/g, "<~>")
-        data = data.replace(/(<#>)/g, "\n")
-        data = data.split("<*>")
-
-        if (elm.innerHTML == "") {
-            table = "<table class=\"table log_table is-striped is-family-code\" style=\"width: 100%;\"><tbody>"
+    // --- Logs and Responses ---
+    // Get logs from backend and save to logs_array
+    static get_logs(data) {
+        if (data == "FORCE") {
+            WS.ws.send(COM.payloader("LOG"))
         } else {
-            table = elm.innerHTML.slice(0, elm.innerHTML.length - 16)
+            // If initial run
+            if (this.logs_array == null) {
+                this.logs_array = []
 
-            // Check if logs exceed max history length
-            var table_elements = table.match(/(<tr[\w\W]+?<\/tr>)/g)
-
-            while (table_elements.length > COM.settings_table["log_history"]) {
-                table_elements.shift()
+                // Update logs div
+                COM.update_logs()
             }
 
-            table_elements = table_elements.join('')
+            // data = data.replace(/(?:\r\n|\r|\n)/g, "<*>")
+            // data = data.replace(/(<#>)/g, "\n")
+            data = data.split("<*>")
 
-            table = "<table class=\"table log_table is-striped is-family-code\" style=\"width: 100%;\"><tbody>".concat(table_elements)
+            this.logs_array = this.logs_array.concat(data)
+
+            setTimeout(function () {
+                COM.get_logs("FORCE")
+            }, COM.settings_table["polling_interval"]);
+        }
+    }
+
+    // Update logs on frontend if required
+    static update_logs() {
+        // Create log_length variable if required
+        if (this.log_length == null) {
+            this.log_length = 0
+        }
+
+        // Check if logs should be updated
+        var update = document.getElementById("logs_auto_update").checked  // here add an || for force while printing
+        if (!update) {
+            setTimeout(function () {
+                COM.update_logs()
+            }, 1000);
+            return
+        }
+
+        var elm = document.getElementById("logs_div")
+        var scroller = elm.parentElement;
+
+        // Collect all logs up to this point
+        var data = this.logs_array.slice(this.log_length)
+
+        // Update log messages length
+        this.log_length = this.logs_array.length
+
+        if (elm.innerHTML == "") {
+            var table = "<table class=\"table log_table is-family-code\" style=\"width: 100%;\"><tbody>"
+        } else {
+            var table = elm.innerHTML.slice(0, elm.innerHTML.length - 16)
+
+            // Trim logs to max history length
+            var table_elements = table.match(/(<tr[\w\W]+?<\/tr>)/g)
+
+            if (table_elements != null) {
+                while (table_elements.length > COM.settings_table["log_history"]) {
+                    table_elements.shift()
+                }
+
+                table_elements = table_elements.join('')
+            } else {
+                table_elements = ""
+            }
+            table = "<table class=\"table log_table is-family-code\" style=\"width: 100%;\"><tbody>".concat(table_elements)
+
         }
 
         for (var i = 0; i < data.length; i += 1) {
@@ -828,7 +865,7 @@ function update_logs(data) {
             var current_data = data[i].split("<~>")
 
             // Custom highlight
-            hl = " class=\""
+            var hl = " class=\""
 
             switch (current_data[1]) {
                 case "INFO":
@@ -850,33 +887,30 @@ function update_logs(data) {
 
         table = table + "</tbody></table>";
 
-        if ((scroller.scrollHeight - scroller.clientHeight < scroller.scrollTop + 50) || force_scroll) {
-            scroll = true
+        // Check if logs need to be scrolled
+        if ((scroller.scrollHeight - scroller.clientHeight < scroller.scrollTop + 50) || (this.force_scroll == null) || this.force_scroll) {
+            var scroll = true
         } else {
-            scroll = false
+            var scroll = false
         }
 
-        if (elm.innerHTML == "") {
-            elm.innerHTML = table
-            scroll = true
-        } else {
-            elm.innerHTML = table
-        }
+        // Update html
+        elm.innerHTML = table
 
+        // Scroll if needed
         if (scroll) {
             scroller.scrollTop = scroller.scrollHeight;
-            force_scroll = false
+            this.force_scroll = false
         }
 
-        if (document.getElementById("logs_quickview").classList.contains("is-active")) {
-            if (update) {
-                setTimeout(function () {
-                    update_logs("FORCE")
-                }, COM.settings_table["polling_interval"]);
-            }
-        } else {
-            force_scroll = true
+        // Request new update if auto-update enabled
+        if (!document.getElementById("logs_quickview").classList.contains("is-active")) {
+            this.force_scroll = true
         }
+
+        setTimeout(function () {
+            COM.update_logs()
+        }, 1000);
     }
 
 }
