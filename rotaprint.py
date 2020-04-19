@@ -230,13 +230,14 @@ class database:
         # --- General settings ---
         "warning_percentage": 10,
         "report_interval": 1,
+        "polling_interval": 100,
         "z_height": 20,
         "z_offset": 0,
         "z_lift": 10,
 
         # --- Batch settings ---
-        "batch_origin": 100,
-        "batch_offset": 150,
+        "batch_origin": 110,
+        "batch_offset": 100,
 
         # --- Option defaults ---
         "length": 100,
@@ -319,21 +320,29 @@ class websocket:
         listenThread = threading.Thread(target=self.listen)
         listenThread.daemon = False
         listenThread.start()
+
         logging.info("Websocket initialised")
 
     def listen(self):
+        # Zero connections to start with
+        self.connected = 0
+
         # Listen always for messages over websocket
         async def listener(websocket, path):
-            # hold = False
-            # buffer = list()
-            while True:
-                # Listen for new messages
-                data = await websocket.recv()
+            self.connected += 1
 
-                # Send incoming messages to the handler, in parallel with main process
-                future = r.pool.submit(self.handler, data)
-                response = future.result()
-                await websocket.send(response)
+            try:
+                while True:
+                    # Listen for new messages
+                    data = await websocket.recv()
+
+                    # Send incoming messages to the handler, in parallel with main process
+                    future = r.pool.submit(self.handler, data)
+                    response = future.result()
+                    await websocket.send(response)
+            finally:
+                # Decriment connection counter when disconnected
+                self.connected -= 1
 
         asyncio.set_event_loop(asyncio.new_event_loop())
         server = websockets.serve(listener, 'localhost', 8765, max_size=None)
@@ -436,9 +445,10 @@ class websocket:
         def fetch_value(self, payload):
             # Get current value of variable
             variable = {
-                "connected": g.connected,
+                "grbl": g.connected,
+                "websocket": w.connected,
             }
-            return str(variable[payload])
+            return self.payloader(payload, str(variable[payload]))
 
         def reconnect_printer(self, payload):
             # Reconnect to printer incase of issue

@@ -84,11 +84,9 @@ response = "";
 ws.onopen = function (e) {
     console.log("[open] Connection established");
 
-    // Remove pageloader
-    setTimeout(() => {
-        document.getElementById("pageloader_title").innerHTML = "Connected!";
-    }, 500);
+    check_open_elsewhere()
 
+    // Remove pageloader
     setTimeout(() => {
         document.getElementById("pageloader").classList.remove('is-active');
     }, 1000);
@@ -112,7 +110,7 @@ ws.onmessage = function (event) {
     payload = data["payload"]
 
     if (command == "LOG") {
-        console.log(`[message] Data received from server: (log update)`);
+        // Do nothing
     } else {
         console.log(`[message] Data received from server: ${event.data}`);
     }
@@ -139,7 +137,18 @@ ws.onmessage = function (event) {
             update_settings(payload);
             break
         case "RQV":
-            check_connected(payload);
+            payload = JSON.parse(payload)
+            variable = payload["command"]
+            value = payload["payload"]
+
+            switch (variable) {
+                case "grbl":
+                    check_connected(value);
+                    break
+                case "websocket":
+                    check_open_elsewhere(value);
+                    break
+            }
             break
         case "DBS":
             send_new_settings(payload);
@@ -187,10 +196,6 @@ function payloader(command, payload) {
 
     data = JSON.stringify(data)
     return data
-}
-
-function echo_chamber(payload) {
-    console.log(payload)
 }
 
 function send_custom_code(e) {
@@ -451,7 +456,21 @@ function check_connected(data) {
     }
 
     console.log("Checking printer connection...")
-    ws.send(payloader("RQV", "connected"))
+    ws.send(payloader("RQV", "grbl"))
+}
+
+function check_open_elsewhere(data) {
+    data = parseInt(data)
+    if (data <= 1) {
+        return
+    } else if (data > 1) {
+        // Redirect to access denied error page
+        window.location.replace("web/content/access_denied.html");
+        return
+    }
+
+    console.log("Checking if GUI is open elsewhere...")
+    ws.send(payloader("RQV", "websocket"))
 }
 
 function reconnect_printer() {
@@ -723,7 +742,7 @@ function update_logs(data) {
         data = data.split("<~>")
 
         if (elm.innerHTML == "") {
-            table = "<table class=\"table log_table is-striped is-family-code\">"
+            table = "<table class=\"table log_table is-striped is-family-code\" style=\"width=100%;\">"
         } else {
             // table = elm.innerHTML
             table = elm.innerHTML.slice(0, elm.innerHTML.length - 8)
@@ -752,7 +771,7 @@ function update_logs(data) {
 
         table = table + "</table>";
 
-        if ((scroller.scrollHeight - scroller.clientHeight < scroller.scrollTop + 50) || force_scroll) {
+        if ((scroller.scrollHeight - scroller.clientHeight < scroller.scrollTop + 1) || force_scroll) {
             scroll = true
         } else {
             scroll = false
@@ -774,7 +793,7 @@ function update_logs(data) {
             if (update) {
                 setTimeout(function () {
                     update_logs("FORCE")
-                }, 1000);
+                }, settings_table["polling_interval"]);
             }
         } else {
             force_scroll = true

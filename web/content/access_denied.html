@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<!-- 
+* Copyright (c) 2020
+* This file is part of the TDCA rotary printer project.
+* 
+* Access denied page for GUI for TDCA rotary printer.
+* Written by Callum Morrison <callum.morrison@mac.com>, 2020
+* 
+* Unauthorized copying of this file, via any medium is strictly prohibited
+* Proprietary and confidential
+-->
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>rotaprint</title>
+
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../custom.css">
+
+    <script src="../../node_modules/lottie-web/build/player/lottie.min.js"></script>
+
+    <link rel="shortcut icon" href="../favicon.png" type="image/x-icon">
+    <link rel="icon" href="../favicon.png" type="image/x-icon">
+</head>
+
+<body>
+    <section class="section">
+        <nav class="level container">
+            <!-- Level left -->
+            <div class="level-left">
+                <figure class="image is-64x64">
+                    <img src="../../branding/logo_option3.svg">
+                </figure>
+                <div class="container" style="padding-left: 1em; top: -4px;">
+                    <p class="title">rotaprint</p>
+                    <p class="subtitle">Printer UI <b>1.0</b></p>
+                </div>
+            </div>
+
+            <!-- Level right -->
+            <div class="level-right">
+                <div class="container">
+                    <i class="fas fa-cogs fa-2x icon_button" onclick="show_settings()"></i>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="columns is-vcentered" style="height: 68vh;">
+                <div class="column is-4">
+                    <div style="right: -20%; position: relative;">
+                        <span id="error" style="width: 30%;"></span>
+                    </div>
+                </div>
+
+                <script>
+                    lottie.loadAnimation({
+                        container: document.getElementById("error"), // the dom element that will contain the animation
+                        renderer: 'svg',
+                        loop: false,
+                        autoplay: true,
+                        path: '../../branding/13250-error-state-animation.json', // the path to the animation json
+                        viewBox: 10
+                    });
+                </script>
+
+                <div class="column">
+                    <p class="title" style="font-size: 6em;margin-bottom: 0px;">Access denied</p>
+                    <p class="is-size-3">Someone else is already connected.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>

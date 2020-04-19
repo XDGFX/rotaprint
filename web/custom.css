@@ -31,13 +31,13 @@ html, .section, .quickview-body {
 
 /* Pageloader */
 .pageloader {
-  background-color: white;
+  background-color: #fafafa;
 }
 /* Used to display X if page does not load */
 .pageloader.is-stopped::after {
     display: inline-block;
     content: "\00d7";
-    color: black;
+    color: #4a4a4a;
     scale: 5;
     top:50%;
     left:50%;
@@ -50,11 +50,13 @@ html, .section, .quickview-body {
 }
 
 .pageloader::after {
-  border: 0 solid #000
+  border: 0 solid #f14668
 }
 
-.pageloader .title {
-  color: black;
+#pageloader_title {
+  font-weight: 400 !important;
+  font-size: large;
+  color: #4a4a4a;
 }
 
 /* Used to configure overlay screens */
@@ -163,4 +165,32 @@ input[type=number] {
 .has-text-centered tr,
 .has-text-centered td {
   text-align: center !important;
+}
+
+/* Tiles */
+.tile.is-child {
+  display: flex;
+  align-items: center;
+}
+
+/* Fullwidth */
+span.is-fullwidth {
+  width: 100% !important;
+}
+
+/* Monitoring column */
+#monitor_column .tile.is-ancestor {
+  height: calc(100% / 5);
+  min-height:115px;
+}
+
+/* Monitoring logs div */
+#logs_div {
+  height: calc(100% - 24px);
+  min-height: calc(115px * 5 - 24px);
+}
+
+.quickview {
+  width: 40%;
+  right: -40%;
 }

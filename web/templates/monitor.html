@@ -1,0 +1,190 @@
+<!-- 
+* Copyright (c) 2020
+* This file is part of the TDCA rotary printer project.
+* 
+* Template for advanced machine settings
+* Written by Callum Morrison <callum.morrison@mac.com>, 2020
+* 
+* Unauthorized copying of this file, via any medium is strictly prohibited
+* Proprietary and confidential
+-->
+
+<head>
+    <script type="text/javascript" src="http://livejs.com/live.js"></script>
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="../../node_modules/bulma-extensions/dist/css/bulma-extensions.min.css">
+    <link rel="stylesheet" href="../../node_modules/animate.css/animate.min.css">
+    <link rel="stylesheet" href="../../node_modules/bulma-modal-fx/dist/css/modal-fx.min.css">
+    <link rel="stylesheet" href="../../node_modules/bulma-o-steps/bulma-steps.min.css">
+    <link rel="stylesheet" href="../custom.css">
+
+    <script defer src="../../node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
+    <script src="../../node_modules/bulma-toast/dist/bulma-toast.min.js"></script>
+    <script src="../../node_modules/lottie-web/build/player/lottie.min.js"></script>
+    <script src="../../node_modules/bulma-extensions/bulma-quickview/dist/js/bulma-quickview.min.js"></script>
+</head>
+
+<body>
+    <section class="section">
+
+        <nav class="level container">
+            <!-- Level left -->
+            <div class="level-left">
+                <figure class="image is-64x64">
+                    <img src="branding/logo_option3.svg">
+                </figure>
+                <div class="container" style="padding-left: 1em; top: -4px;">
+                    <p class="title">rotaprint</p>
+                    <p class="subtitle">Printer UI <b>1.0</b></p>
+                </div>
+            </div>
+
+            <div class="level-item has-text-centered">
+                <p class="title">Monitor</p>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="columns" style="height: calc(100vh - 161px);">
+                <div id="monitor_column" class="column">
+                    <!-- Current Status Glance -->
+                    <div class="tile is-ancestor">
+                        <div class="tile is-parent">
+                            <article class="tile is-child notification">
+                                <div>
+                                    <p class="heading">Time elapsed</p>
+                                    <p class="subtitle">23m 19s</p>
+                                </div>
+                            </article>
+                        </div>
+                        <div class="tile is-parent">
+                            <article class="tile is-child notification">
+                                <div>
+                                    <p class="heading">Parts complete</p>
+                                    <p class="subtitle">2 of 5</p>
+                                </div>
+                            </article>
+                        </div>
+                        <div class="tile is-parent">
+                            <article class="tile is-child notification">
+                                <div>
+                                    <p class="heading">Time remaining</p>
+                                    <p class="subtitle">~42m</p>
+                                </div>
+                            </article>
+                        </div>
+                        <div class="tile is-parent">
+                            <article class="tile is-child notification is-success">
+                                <div>
+                                    <p class="heading">Operation</p>
+                                    <p class="subtitle">Printing</p>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div class="tile is-ancestor">
+                        <div class="tile">
+                            <div class="tile is-parent">
+                                <article class="tile is-child notification">
+                                    <div style="width: 100%; padding-bottom: 1em; line-height: 2em;">
+                                        <p class="heading">Print progress</p>
+                                        <progress class="progress" value="15" max="100">15%</progress>
+                                    </div>
+                                </article>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tile is-ancestor">
+                        <div class="tile">
+                            <div class="tile is-parent">
+                                <article class="tile is-child notification is-success" style="padding:0">
+                                    <span class="icon is-large is-fullwidth">
+                                        <i class="fas fa-2x fa-bell"></i>
+                                    </span>
+                                </article>
+                            </div>
+                            <div class="tile is-parent">
+                                <article class="tile is-child notification">
+                                    <p class="is-size-3"><b>X</b>102.2</p>
+                                </article>
+                            </div>
+                            <div class="tile is-parent">
+                                <article class="tile is-child notification">
+                                    <p class="is-size-3"><b>Y</b>23.6</p>
+                                </article>
+                            </div>
+                            <div class="tile is-parent">
+                                <article class="tile is-child notification">
+                                    <p class="is-size-3"><b>Z</b>10.0</p>
+                                </article>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tile is-ancestor">
+                        <div class="tile">
+                            <div class="tile is-parent">
+                                <article class="tile is-child notification">
+                                    <div>
+                                        <p class="heading">Latest error</p>
+                                        <p class="subtitle">20 - Unsupported or invalid g-code command found in block.
+                                        </p>
+                                    </div>
+                                </article>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tile is-ancestor">
+                        <div class="tile">
+                            <div class="tile is-parent">
+                                <button class="tile is-child notification has-text-centered button is-warning"
+                                    style="padding: 0; height: 100%;">
+                                    <div>
+                                        <i class="fas fa-2x fa-stop"></i>
+                                        <span class="heading">Soft Reset</span>
+                                    </div>
+                                </button>
+                            </div>
+                            <div class="tile is-parent">
+                                <button class="tile is-child notification has-text-centered button is-warning"
+                                    style="padding: 0; height: 100%;">
+                                    <div>
+                                        <i class="fas fa-2x fa-hand-paper"></i>
+                                        <span class="heading">Feed Hold</span>
+                                    </div>
+                                </button>
+                            </div>
+                            <div class="tile is-parent">
+                                <button class="tile is-child notification has-text-centered button is-warning"
+                                    style="padding: 0; height: 100%;">
+                                    <div>
+                                        <i class="fas fa-2x fa-play"></i>
+                                        <span class="heading">Continue</span>
+                                    </div>
+                                </button>
+                            </div>
+                            <div class="tile is-parent">
+                                <button class="tile is-child notification has-text-centered button"
+                                    style="padding:0; height: 100%;" disabled>
+                                    <div>
+                                        <i class="fas fa-2x fa-check"></i>
+                                        <span class="heading">Complete</span>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="column is-4">
+                    <div id="logs_div" class="notification">
+                        <p class="heading has-text-centered">No logs loaded</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>

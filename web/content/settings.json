@@ -23,6 +23,14 @@
             "help": "How frequently the firmware is polled for position and status information. Recommended no greater than 5Hz (0.2s). High polling frequencies may cause issues."
         },
         {
+            "title": "Polling Interval",
+            "id": "polling_interval",
+            "unit": "ms",
+            "advanced": false,
+            "category": "general",
+            "help": "How frequently the GUI requests updates (including logs) from the backend. Shorter intervals means messages are more up-to-date."
+        },
+        {
             "title": "Z Height",
             "id": "z_height",
             "unit": "mm",
