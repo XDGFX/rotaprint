@@ -9,7 +9,7 @@
  * Proprietary and confidential
  */
 
-html, .section, .quickview-body {
+html, .section, .quickview-body, #monitoring_logs_div {
 	scroll-behavior: smooth
 }
 
@@ -68,6 +68,7 @@ html, .section, .quickview-body {
   left: 0;
   top: 0;
   overflow-x: hidden; /* Disable horizontal scroll */
+  overscroll-behavior: contain;
 }
 
 /* Sticky for menu contents */
@@ -185,7 +186,7 @@ span.is-fullwidth {
 }
 
 /* Monitoring logs div */
-#logs_div {
+#monitoring_logs_div {
   height: calc(100% - 24px);
   min-height: calc(115px * 5 - 24px);
 }
@@ -193,4 +194,8 @@ span.is-fullwidth {
 .quickview {
   width: 40%;
   right: -40%;
+}
+
+button.tile .heading {
+  margin: 0;
 }

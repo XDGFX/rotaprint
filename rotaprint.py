@@ -46,6 +46,18 @@ class rotaprint:
     # Number of parts in batch / int
     batch = ""
 
+    status = {
+        "time_elapsed": 0,
+        "parts_complete": 0,
+        "time_remaining": -1,
+        "operation": "Idle",
+        "grbl_operation": "Idle",
+        "grbl_x": 0,
+        "grbl_y": 0,
+        "grbl_z": 0,
+        "print_progress": 0
+    }
+
     def setup_log(self):
         # Create normal logger
         log = logging.getLogger("rotaprint")
@@ -83,12 +95,37 @@ class rotaprint:
             # Replace newline to prevent issues when displaying at frontend
             log.error(line)
 
+    def timer(self):
+        # Initialise start time
+        start_time = time.time()
+
+        # Update time elapsed
+        while self.active:
+            time_seconds = time.time() - start_time
+
+            time_format = str(round(time_seconds / 60)) + \
+                "m " + str(round(time_seconds % 60)) + "s"
+
+            self.status["time_elapsed"] = time_format
+            time.sleep(1)
+
     def print_sequence(self):
+        # Allow existing timers to end
+        self.active = False
+
+        # Indicate machine is active
+        self.active = True
+
+        # Submit timer task
+        r.pool.submit(self.timer)
+
         # Update gcode y values based on part diameter
         gc.correct_dims()
 
         # Submit gcode to printer
         g.send(gc.gcode)
+
+        time.sleep(5)
 
 
 class gcode:
@@ -164,7 +201,8 @@ class webserver:
         webserverThread = threading.Thread(target=self.run)
         webserverThread.daemon = True
         webserverThread.start()
-        log.info("Webserver initialised, Accessible at http://localhost:8080")
+        log.info(
+            "Webserver initialised, Accessible at http://localhost:8080/web/index.html")
 
     def run(self):
         PORT = 8080
@@ -406,7 +444,8 @@ class websocket:
             # Send manual command to grbl
             if g.connected:
                 try:
-                    g.send(str(payload).splitlines(), True)
+                    g.s.write(payload.encode())
+                    log.info(f"GRBL > 7: {g.read()}")
                     return "DONE"
                 except:
                     r.except_logger()
@@ -431,7 +470,7 @@ class websocket:
             else:
                 log.info("Sending gcode to printer...")
 
-                r.print_sequence()
+                r.pool.submit(r.print_sequence())
                 return "DONE"
 
         # def home(self, payload):
@@ -471,6 +510,11 @@ class websocket:
 
             return "DONE"
 
+        def get_current_status(self, payload):
+            data = dumps(r.status)
+
+            return data
+
         switcher = {
             "EST": emergency_stop,
             "SET": print_settings,
@@ -484,6 +528,7 @@ class websocket:
             "RCN": reconnect_printer,
             "LOG": return_logs,
             "RLC": reset_logs_counter,
+            "GCS": get_current_status,
         }
 
         # Separate JSON string into command and payload
@@ -491,7 +536,7 @@ class websocket:
         command = data["command"].upper()
         payload = data["payload"]
 
-        if not command == "LOG":
+        if not (command == "LOG" or command == "GCS"):
             if len(payload) < 50:
                 log.debug(f'WSKT > {command} \"{payload}\"')
             else:
@@ -504,7 +549,7 @@ class websocket:
             r.except_logger()
             response = "ERROR"
 
-        if not command == "LOG":
+        if not (command == "LOG" or command == "GCS"):
             if len(response) < 50:
                 log.debug(f'WSKT < {command} \"{response}\"')
             else:
@@ -560,7 +605,7 @@ class grbl:
             log.debug("GRBL < \"\\r\\n\\r\\n\"")
             self.s.write("\r\n\r\n".encode())
 
-            # temp_out = self.s.readline().strip().decode()
+            # temp_out = self.read()
             # if temp_out.find('error:9') >= 0:
             #     self.clear_lockout()
             time.sleep(2)  # Wait for grbl to initialize
@@ -583,13 +628,14 @@ class grbl:
 
     def send_settings(self):
         log.info("Checking if firmware settings need updating...")
-        log.debug("GRBL <* $$")
-        self.s.write("$$".encode())
 
-        # In testing, GRBL would often take several lines to start responding,
-        # this should flush that so program will not hang
-        for i in range(0, 20):
-            self.s.write("\n".encode())
+        log.debug("GRBL <* $$")
+        self.s.write("$$\n".encode())
+
+        # # In testing, GRBL would often take several lines to start responding,
+        # # this should flush that so program will not hang
+        # for i in range(0, 20):
+        #     self.s.write("\n".encode())
 
         # Wait until current settings are received
         temp_out = ""
@@ -599,7 +645,7 @@ class grbl:
         while not temp_out.startswith("$"):
             # Wait for settings to start receiving
 
-            if timeout_counter > 10:
+            if timeout_counter > 15:
                 # Timeout condition
                 log.error("Printer communication timeout while reading settings")
                 log.info("Will reconnect in an attempt to fix")
@@ -621,7 +667,7 @@ class grbl:
                 force_settings = True
                 break
 
-            temp_out = self.s.readline().strip().decode()
+            temp_out = self.read()
             log.debug(f"GRBL > {temp_out}")
 
             timeout_counter += 1
@@ -639,7 +685,7 @@ class grbl:
                     current_settings.update(dict_out)
 
                     # Update read
-                    temp_out = self.s.readline().strip().decode()
+                    temp_out = self.read()
             else:
                 log.debug(f"GRBL > {temp_out}")
                 log.error("Unexpected data received from GRBL")
@@ -684,7 +730,7 @@ class grbl:
         # log.debug("Sending status query...")
         # log.debug("GRBL < ?")
         try:
-            self.s.write('?'.encode())
+            self.s.write('?\n'.encode())
         except:
             r.except_logger()
 
@@ -725,6 +771,25 @@ class grbl:
             elif out.find('ok') >= 0:
                 log.debug(f'GRBL > {out}')
 
+    def read(self):
+        output = self.s.readline().strip().decode()
+
+        # Contains status report
+        if re.search("^[\\w\\W]+?>$", output):
+            # Current grbl operation
+            r.status["grbl_operation"] = re.findall(
+                "<([\\w\\W]+?)\\|", output)[0]
+
+            # Current grbl position
+            MPos = re.findall("MPos:([\\w\\W]+?)\\|", output)
+            MPos = MPos[0].split(",")
+
+            r.status["grbl_x"] = "X" + MPos[0]
+            r.status["grbl_y"] = "Y" + MPos[1]
+            r.status["grbl_z"] = "Z" + MPos[2]
+
+        return output
+
     def send(self, data, settings_mode=False):
         def _sender(self, **args):
             l_count = 0
@@ -747,7 +812,7 @@ class grbl:
 
                     while True:
                         # Wait for grbl response with carriage return
-                        out = self.s.readline().strip().decode()
+                        out = self.read()
 
                         if out.find('ok') >= 0:
                             log.debug(f"GRBL > {str(l_count)}: {out}")
@@ -781,7 +846,7 @@ class grbl:
                     out = ''
 
                     while sum(c_line) >= rx_buffer_size - 1 | self.s.inWaiting():
-                        out_temp = self.s.readline().strip().decode()  # Wait for grbl response
+                        out_temp = self.read()  # Wait for grbl response
 
                         if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
                             log.debug(f"GRBL > {out_temp}")  # Debug response
@@ -804,7 +869,7 @@ class grbl:
 
                 # Wait until all responses have been received.
                 while l_count > g_count:
-                    out_temp = self.s.readline().strip().decode()  # Wait for grbl response
+                    out_temp = self.read()  # Wait for grbl response
 
                     if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
                         log.debug(f"GRBL > {out_temp}")  # Debug response

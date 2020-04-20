@@ -1,3 +1,5 @@
+<!DOCTYPE html>
+<html>
 <!-- 
 * Copyright (c) 2020
 * This file is part of the TDCA rotary printer project.
@@ -10,28 +12,45 @@
 -->
 
 <head>
-    <script type="text/javascript" src="http://livejs.com/live.js"></script>
-    <link rel="stylesheet" href="../styles.css">
-    <link rel="stylesheet" href="../../node_modules/bulma-extensions/dist/css/bulma-extensions.min.css">
-    <link rel="stylesheet" href="../../node_modules/animate.css/animate.min.css">
-    <link rel="stylesheet" href="../../node_modules/bulma-modal-fx/dist/css/modal-fx.min.css">
-    <link rel="stylesheet" href="../../node_modules/bulma-o-steps/bulma-steps.min.css">
-    <link rel="stylesheet" href="../custom.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>rotaprint</title>
 
-    <script defer src="../../node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
-    <script src="../../node_modules/bulma-toast/dist/bulma-toast.min.js"></script>
-    <script src="../../node_modules/lottie-web/build/player/lottie.min.js"></script>
-    <script src="../../node_modules/bulma-extensions/bulma-quickview/dist/js/bulma-quickview.min.js"></script>
+    <!-- <script type="text/javascript" src="http://livejs.com/live.js"></script> -->
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../node_modules/bulma-extensions/dist/css/bulma-extensions.min.css">
+    <link rel="stylesheet" href="../node_modules/animate.css/animate.min.css">
+    <link rel="stylesheet" href="../node_modules/bulma-modal-fx/dist/css/modal-fx.min.css">
+    <link rel="stylesheet" href="../node_modules/bulma-o-steps/bulma-steps.min.css">
+    <link rel="stylesheet" href="custom.css">
+
+    <script defer src="../node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
+    <script src="../node_modules/bulma-toast/dist/bulma-toast.min.js"></script>
+    <script src="../node_modules/lottie-web/build/player/lottie.min.js"></script>
+    <script src="../node_modules/bulma-extensions/bulma-quickview/dist/js/bulma-quickview.min.js"></script>
+    <script type="text/javascript">page = "monitor"</script>
+    <script defer src="main.js"></script>
+
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+    <link rel="icon" href="favicon.png" type="image/x-icon">
 </head>
 
 <body>
+
+    <!-- Pageloader -->
+    <div id="pageloader" class="pageloader is-active">
+        <span class="title">
+            <p id="pageloader_title"></p>
+        </span>
+    </div>
+
     <section class="section">
 
         <nav class="level container">
             <!-- Level left -->
             <div class="level-left">
                 <figure class="image is-64x64">
-                    <img src="branding/logo_option3.svg">
+                    <img src="../branding/logo_option3.svg">
                 </figure>
                 <div class="container" style="padding-left: 1em; top: -4px;">
                     <p class="title">rotaprint</p>
@@ -53,7 +72,7 @@
                             <article class="tile is-child notification">
                                 <div>
                                     <p class="heading">Time elapsed</p>
-                                    <p class="subtitle">23m 19s</p>
+                                    <p id="display_time_elapsed" class="subtitle">23m 19s</p>
                                 </div>
                             </article>
                         </div>
@@ -61,7 +80,7 @@
                             <article class="tile is-child notification">
                                 <div>
                                     <p class="heading">Parts complete</p>
-                                    <p class="subtitle">2 of 5</p>
+                                    <p id="display_parts_complete" class="subtitle">2 of 5</p>
                                 </div>
                             </article>
                         </div>
@@ -69,7 +88,7 @@
                             <article class="tile is-child notification">
                                 <div>
                                     <p class="heading">Time remaining</p>
-                                    <p class="subtitle">~42m</p>
+                                    <p id="display_time_remaining" class="subtitle">~42m</p>
                                 </div>
                             </article>
                         </div>
@@ -77,7 +96,7 @@
                             <article class="tile is-child notification is-success">
                                 <div>
                                     <p class="heading">Operation</p>
-                                    <p class="subtitle">Printing</p>
+                                    <p id="display_operation" class="subtitle">Printing</p>
                                 </div>
                             </article>
                         </div>
@@ -89,7 +108,8 @@
                                 <article class="tile is-child notification">
                                     <div style="width: 100%; padding-bottom: 1em; line-height: 2em;">
                                         <p class="heading">Print progress</p>
-                                        <progress class="progress" value="15" max="100">15%</progress>
+                                        <progress id="value_print_progress" class="progress" value="15"
+                                            max="100"></progress>
                                     </div>
                                 </article>
                             </div>
@@ -140,25 +160,30 @@
                     <div class="tile is-ancestor">
                         <div class="tile">
                             <div class="tile is-parent">
-                                <button class="tile is-child notification has-text-centered button is-warning"
+                                <button onclick="COM.send_custom_code('GRB', '0x18')"
+                                    class="tile is-child notification has-text-centered button is-warning"
                                     style="padding: 0; height: 100%;">
                                     <div>
                                         <i class="fas fa-2x fa-stop"></i>
-                                        <span class="heading">Soft Reset</span>
+                                        <span class="heading">Soft
+                                            Reset</span>
                                     </div>
                                 </button>
                             </div>
                             <div class="tile is-parent">
-                                <button class="tile is-child notification has-text-centered button is-warning"
+                                <button onclick="COM.send_custom_code('GRB', '!')"
+                                    class="tile is-child notification has-text-centered button is-warning"
                                     style="padding: 0; height: 100%;">
                                     <div>
                                         <i class="fas fa-2x fa-hand-paper"></i>
-                                        <span class="heading">Feed Hold</span>
+                                        <span class="heading">Feed
+                                            Hold</span>
                                     </div>
                                 </button>
                             </div>
                             <div class="tile is-parent">
-                                <button class="tile is-child notification has-text-centered button is-warning"
+                                <button onclick="COM.send_custom_code('GRB', '~')"
+                                    class="tile is-child notification has-text-centered button is-warning"
                                     style="padding: 0; height: 100%;">
                                     <div>
                                         <i class="fas fa-2x fa-play"></i>
@@ -179,9 +204,11 @@
                     </div>
 
                 </div>
-                <div class="column is-4">
-                    <div id="logs_div" class="notification">
-                        <p class="heading has-text-centered">No logs loaded</p>
+                <div class="column is-5">
+                    <div id="monitoring_logs_div" style="height: 100%;overflow-y: auto;">
+                        <div id="logs_div">
+                            <p class="heading has-text-centered">No logs loaded</p>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -21,7 +21,7 @@ class CG {
         var response
 
         // Load standard HTML setting
-        response = await fetch("web/templates/setting.html", { cache: "reload" })
+        response = await fetch("templates/setting.html", { cache: "reload" })
         var html_settings = await response.text()
         this.html_settings = html_settings
             .replace(/\n/g, "")
@@ -29,7 +29,7 @@ class CG {
             .replace(/[ ]{2,}/g, " ")
 
         // Load advanced HTML setting
-        response = await fetch("web/templates/setting_advanced.html", { cache: "reload" })
+        response = await fetch("templates/setting_advanced.html", { cache: "reload" })
         var html_settings_advanced = await response.text()
         this.html_settings_advanced = html_settings_advanced
             .replace(/\n/g, "")
@@ -37,7 +37,7 @@ class CG {
             .replace(/[ ]{2,}/g, " ")
 
         // Load settings heading
-        response = await fetch("web/templates/setting_heading.html")
+        response = await fetch("templates/setting_heading.html")
         var html_settings_heading = await response.text()
         this.html_settings_heading = html_settings_heading
             .replace(/\n/g, "")
@@ -45,7 +45,7 @@ class CG {
             .replace(/[ ]{2,}/g, " ")
 
         // Load modals html
-        response = await fetch("web/content/modals.html", { cache: "reload" })
+        response = await fetch("content/modals.html", { cache: "reload" })
         var html_modals = await response.text()
         this.html_modals = html_modals
             .replace(/\n/g, "")
@@ -53,7 +53,7 @@ class CG {
             .replace(/[ ]{2,}/g, " ")
 
         // Load and parse settings json
-        response = await fetch("web/content/settings.json", { cache: "reload" })  // TODO remove cache "reload"
+        response = await fetch("content/settings.json", { cache: "reload" })  // TODO remove cache "reload"
         var settings_json = await response.text()
         this.settings_json = JSON.parse(settings_json)
     }
@@ -64,14 +64,19 @@ class CG {
         // Await required so data is loaded synchronously before attempted html generation
         await this.load_data()
 
-        // Generate settings page
-        this.generate_settings()
+        if (page == "index") {
+            // Generate settings page
+            this.generate_settings()
 
-        // Generate other static content
-        this.generate_static_content()
+            // Generate other static content
+            this.generate_static_content()
+        }
 
-        // Update settings page
+        // Update settings values and settings page
         COM.update_settings()
+
+        // Get current machine status
+        COM.get_current_status("FORCE")
 
         // Initialise log requester
         COM.get_logs("FORCE")
@@ -324,13 +329,13 @@ class WS {
 
             WS.check_open_elsewhere()
 
+            // Reset log counter for new session
+            WS.ws.send(COM.payloader("RLC"))
+
             // Remove pageloader
             setTimeout(() => {
                 document.getElementById("pageloader").classList.remove('is-active');
             }, 1000);
-
-            // Reset log counter for new session
-            WS.ws.send(COM.payloader("RLC"))
 
             // Generate page content
             CG.generate_content()
@@ -348,8 +353,8 @@ class WS {
             var command = data["command"]
             var payload = data["payload"]
 
-            // Display message in console if not log request
-            if (command != "LOG") {
+            // Display message in console if not log or gcs request
+            if ((command != "LOG") && (command != "GCS")) {
                 console.log(`[message] Data received from server: ${event.data}`);
             }
 
@@ -401,6 +406,12 @@ class WS {
                 case "PRN":
                     COM.print_now(payload);
                     break
+                case "SET":
+                    COM.print_now(payload);
+                    break
+                case "GCS":
+                    COM.get_current_status(payload);
+                    break
             }
         };
 
@@ -439,7 +450,7 @@ class WS {
             return
         } else if (data > 1) {
             // Redirect to access denied error page
-            window.location.replace("web/content/access_denied.html");
+            window.location.replace("access_denied.html");
             return
         }
 
@@ -497,7 +508,7 @@ class COM {
     // --- Direct Communication ---
 
     // Send custom message to backend
-    static send_custom_code(e) {
+    static send_custom_code(e, data) {
         if (e.keyCode == 13 || e == "FORCE") {
             var ids = ["manual_command", "manual_payload"]
             var data = []
@@ -511,6 +522,9 @@ class COM {
 
             data = this.payloader(data[0], data[1])
             console.log(data)
+            WS.ws.send(data)
+        } else if (e == "GRB") {
+            data = this.payloader("GRB", data)
             WS.ws.send(data)
         }
     }
@@ -529,45 +543,47 @@ class COM {
         // Get settings from response
         this.settings_table = JSON.parse(data[0])
 
-        var container
-        var id
+        if (page == "index") {
+            var container
+            var id
 
-        // Find machine settings, update with current values
-        container = document.getElementById("settings_column")
-        for (const key of Object.keys(this.settings_table)) {
-            id = container.querySelector("#setting_"
-                .concat(key)
-                .replace(/\$/g, "\\$")
-                .replace(/_/g, "\\_")
-            )
-            if (id != null) {
-                id.value = this.settings_table[key]
-            }
-        }
-
-        // Update homepage settings with current defaults
-        container = document.getElementById("primary_settings_column")
-        for (const key of Object.keys(this.settings_table)) {
-            id = container.querySelector("#input_"
-                .concat(key)
-                .replace(/\$/g, "\\$")
-                .replace(/_/g, "\\_")
-            )
-            if (id != null) {
-                // Check if this is a fresh session, only update if true
-                if (this.default_settings == null) {
+            // Find machine settings, update with current values
+            container = document.getElementById("settings_column")
+            for (const key of Object.keys(this.settings_table)) {
+                id = container.querySelector("#setting_"
+                    .concat(key)
+                    .replace(/\$/g, "\\$")
+                    .replace(/_/g, "\\_")
+                )
+                if (id != null) {
                     id.value = this.settings_table[key]
                 }
             }
+
+            // Update homepage settings with current defaults
+            container = document.getElementById("primary_settings_column")
+            for (const key of Object.keys(this.settings_table)) {
+                id = container.querySelector("#input_"
+                    .concat(key)
+                    .replace(/\$/g, "\\$")
+                    .replace(/_/g, "\\_")
+                )
+                if (id != null) {
+                    // Check if this is a fresh session, only update if true
+                    if (this.default_settings == null) {
+                        id.value = this.settings_table[key]
+                    }
+                }
+            }
+
+            // Update current print speed based on new settings
+            COM.update_surface_speed()
         }
 
         // Update default settings once only
         if (this.default_settings == null) {
             this.default_settings = JSON.parse(data[1])
         }
-
-        // Update current print speed based on new settings
-        COM.update_surface_speed()
     }
 
     // Send changed settings on settings page to backend
@@ -671,9 +687,12 @@ class COM {
     // Read file selected and send to backend, provide success response if received
     static send_gcode(data) {
         if (data == "DONE") {
+            // Update filename
             var fileName = this.fileInput.parentElement.querySelectorAll("p")[0]
             fileName.classList.remove('has-text-grey-lighter');
             fileName.textContent = this.fileInput.files[0].name;
+
+            document.querySelector("#button_print").disabled = false
 
             // Send notification success
             bulmaToast.toast({
@@ -698,19 +717,63 @@ class COM {
         }
     }
 
+    static get_current_status(data) {
+        if (data == "FORCE") {
+            WS.ws.send(COM.payloader("GCS"))
+        } else {
+            var current_status = JSON.parse(data)
+
+            // If printer is not idle, redirect to monitor page
+            if (page != "monitor") {
+                if (current_status["operation"] != "Idle") {
+                    window.location.replace("monitor.html");
+                }
+                // If printer is idle, exit this function
+                return
+            }
+
+            var id
+            var key
+
+            var container = document.getElementById("monitor_column")
+            for (key of Object.keys(current_status)) {
+                // Update all matching display elements
+                id = container.querySelector("#display_"
+                    .concat(key)
+                    .replace(/_/g, "\\_")
+                )
+
+                if (id != null) {
+                    if (id.innerHTML != current_status[key]) {
+                        id.innerHTML = current_status[key]
+                    }
+                    continue
+                }
+
+                // Update all matching value elements
+                if (id == null) {
+                    id = container.querySelector("#value_"
+                        .concat(key)
+                        .replace(/_/g, "\\_")
+                    )
+                }
+
+                if ((id != null) && id.value != current_status[key]) {
+                    id.value = current_status[key]
+                }
+            }
+
+            setTimeout(function () {
+                COM.get_current_status("FORCE")
+            }, COM.settings_table["polling_interval"]);
+        }
+    }
+
     // Get current settings and send the backend, then request print to begin
     static print_now(data) {
         if (data == "DONE") {
-            // Send notification success
-            bulmaToast.toast({
-                message: "Printing now!",
-                type: "is-success",
-                position: "bottom-right",
-                dismissible: true,
-                closeOnClick: false,
-                duration: 4000,
-                animate: { in: "fadeInRight", out: "fadeOutRight" }
-            });
+            WS.ws.close()
+            window.location.replace("monitor.html");
             return
         }
 
@@ -785,6 +848,7 @@ class COM {
     }
 
     // --- Logs and Responses ---
+
     // Get logs from backend and save to logs_array
     static get_logs(data) {
         if (data == "FORCE") {
@@ -795,6 +859,7 @@ class COM {
                 this.logs_array = []
 
                 // Update logs div
+                this.force_scroll = true
                 COM.update_logs()
             }
 
@@ -818,7 +883,7 @@ class COM {
         }
 
         // Check if logs should be updated
-        var update = document.getElementById("logs_auto_update").checked  // here add an || for force while printing
+        var update = (!(page == "index") || document.getElementById("logs_auto_update").checked)
         if (!update) {
             setTimeout(function () {
                 COM.update_logs()
@@ -904,7 +969,7 @@ class COM {
         }
 
         // Request new update if auto-update enabled
-        if (!document.getElementById("logs_quickview").classList.contains("is-active")) {
+        if (page == "index" && !document.getElementById("logs_quickview").classList.contains("is-active")) {
             this.force_scroll = true
         }
 
@@ -917,5 +982,8 @@ class COM {
 
 // Setup event handlers
 WS.start()
-COM.get_gcode()
-CG.scroller()
+
+if (page == "index") {
+    COM.get_gcode()
+    CG.scroller()
+}

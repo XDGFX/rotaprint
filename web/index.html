@@ -16,20 +16,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>rotaprint</title>
 
-    <link rel="stylesheet" href="web/styles.css">
-    <link rel="stylesheet" href="node_modules/bulma-extensions/dist/css/bulma-extensions.min.css">
-    <link rel="stylesheet" href="node_modules/animate.css/animate.min.css">
-    <link rel="stylesheet" href="node_modules/bulma-modal-fx/dist/css/modal-fx.min.css">
-    <link rel="stylesheet" href="web/custom.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../node_modules/bulma-extensions/dist/css/bulma-extensions.min.css">
+    <link rel="stylesheet" href="../node_modules/animate.css/animate.min.css">
+    <link rel="stylesheet" href="../node_modules/bulma-modal-fx/dist/css/modal-fx.min.css">
+    <link rel="stylesheet" href="custom.css">
 
-    <script defer src="node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
-    <script src="node_modules/bulma-toast/dist/bulma-toast.min.js"></script>
-    <script src="node_modules/lottie-web/build/player/lottie.min.js"></script>
-    <script src="node_modules/bulma-extensions/bulma-quickview/dist/js/bulma-quickview.min.js"></script>
-    <script defer src="web/main.js"></script>
+    <script defer src="../node_modules/@fortawesome/fontawesome-free/js/all.min.js"></script>
+    <script src="../node_modules/bulma-toast/dist/bulma-toast.min.js"></script>
+    <script src="../node_modules/lottie-web/build/player/lottie.min.js"></script>
+    <script src="../node_modules/bulma-extensions/bulma-quickview/dist/js/bulma-quickview.min.js"></script>
+    <script type="text/javascript">page = "index"</script>
+    <script defer src="main.js"></script>
 
-    <link rel="shortcut icon" href="web/favicon.png" type="image/x-icon">
-    <link rel="icon" href="web/favicon.png" type="image/x-icon">
+    <link rel="shortcut icon" href="favicon.png" type="image/x-icon">
+    <link rel="icon" href="favicon.png" type="image/x-icon">
 </head>
 
 <body>
@@ -79,7 +80,7 @@
             <!-- Level left -->
             <div class="level-left">
                 <figure class="image is-64x64">
-                    <img src="branding/logo_option3.svg">
+                    <img src="../branding/logo_option3.svg">
                 </figure>
                 <div class="container" style="padding-left: 1em; top: -4px;">
                     <p class="title">rotaprint</p>
@@ -123,7 +124,8 @@
                 <div>
                     <div class="columns is-vcentered">
                         <div class="column">
-                            <button class="button" onclick="COM.print_now()">Print</button>
+                            <button class="button" id="button_print" onclick="COM.print_now()" autocomplete="off"
+                                disabled>Print</button>
                         </div>
                         <div class="column" id="primary_settings_column">
                             <div class="field">
@@ -283,7 +285,8 @@
                                     <button class="button" onclick="COM.check_connected()">Check</button>
                                 </p>
                             </div>
-                            <p class="help">This is the serial port used to communicate with the printer. It is
+                            <p class="help"><b>If changed:</b> apply settings, then restart rotaprint before attempting
+                                to reconnect! This is the serial port used to communicate with the printer. It is
                                 often in the form <code>/dev/ttyUSB#</code> on Linux and <code>COM#</code> on Windows.
                                 It can be found through the Arduino IDE or device managers.
                             </p>
