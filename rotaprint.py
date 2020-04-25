@@ -123,11 +123,38 @@ class rotaprint:
         # Submit timer task
         r.pool.submit(self.timer)
 
-        # Update gcode y values based on part diameter
-        gc.correct_dims()
+        # Modify gcode as required for colour change and dimensions
+        gc.correct()
 
-        # Submit gcode to printer
-        g.send(gc.gcode)
+        # Change check mode on grbl if required
+        if self.check_mode != g.check_mode:
+            g.check_mode()
+
+        # If check mode is enabled
+        if r.check_mode:
+            # Send gcode once
+            g.send(gc.gcode)
+        else:
+            # Loop over number of components to print on
+            for batch in range(self.batch - 1):
+                # Go to scanner
+                g.change_batch(batch, True)
+
+                # Scan part
+                offset_y_value = v.scan()
+
+                # Setup WCS for correct print start position
+                g.offset_y(offset_y_value)
+
+                # Go to printer
+                g.change_batch(batch)
+
+                # Send gcode
+                g.send(gc.gcode)
+
+                # Update parts complete status
+                self.status["parts_complete"] = str(
+                    batch + 1) + " of " + str(self.batch + 1)
 
         time.sleep(5)
 
@@ -135,67 +162,73 @@ class rotaprint:
 class gcode:
     gcode = ""
 
-    # def g0_g1_conversion(self):
-    #     # Convert all GCODE where printing (indicated by a feedrate change command) to G1
-    #     log.info("Converting print GCODE to G1")
-    #     printing = 0
-
-    #     for idx, command in enumerate(self.gcode):
-    #         if command.startswith("G1 F"):
-    #             # Start of printing
-    #             printing = 1
-    #         elif command.startswith("G0 F"):
-    #             # End of printing
-    #             printing = 0
-
-    #         # Replace [G]0 with [G]1 on current line
-    #         if printing:
-    #             self.gcode[idx] = command[:1] + "1" + \
-    #                 command[2:]  # Replace G0 with G1
-
-    def correct_dims(self):
-        # Correct y and z values to take radius into account
+    def correct(self):
         for idx, line in enumerate(self.gcode):
-            # Alter Y value
-            m = re.search("Y([\d.]+)", line)
+            # Correct Y and Z commands
+            self.correct_dims(idx, line)
 
-            # If command contains Y
-            if m:
-                y = m.string[m.start(1):m.end(1)]
-                y = float(y)
+            # Add correct colour change commands
+            self.correct_colours(idx, line)
 
-                # deg = mm * (360 / 2πr)
-                y = y * 360 / (2 * math.pi * r.radius)
+    def correct_dims(self, idx, line):
+        # Correct y and z values to take radius into account
 
-                y = round(y, 2)
+        # Alter Y value
+        m = re.search("Y([\d.]+)", line)
 
-                new_line = line[:m.start(1)] + str(y) + line[m.end(1):]
+        # If command contains Y
+        if m:
+            y = m.string[m.start(1):m.end(1)]
+            y = float(y)
 
-                self.gcode[idx] = new_line
+            # deg = mm * (360 / 2πr)
+            y = y * 360 / (2 * math.pi * r.radius)
 
-            # Alter Z value
-            m = re.search("Z([\d.]+)", line)
+            y = round(y, 2)
 
-            # If command contains Z
-            if m:
-                z = m.string[m.start(1):m.end(1)]
-                z = float(z)
+            new_line = line[:m.start(1)] + str(y) + line[m.end(1):]
 
-                # if drawing
-                if z == 1:
-                    # set Z to part outer radius, plus the offset
-                    z = db.settings["z_height"] - \
-                        r.radius + db.settings["z_offset"]
-                else:
-                    # set Z to part outer radius, plus the lift height
-                    z = db.settings["z_height"] - \
-                        r.radius - db.settings["z_lift"]
+            self.gcode[idx] = new_line
 
-                z = round(z, 2)
+        # Alter Z value
+        m = re.search("Z([\d.]+)", line)
 
-                new_line = line[:m.start(1)] + str(z) + line[m.end(1):]
+        # If command contains Z
+        if m:
+            z = m.string[m.start(1):m.end(1)]
+            z = float(z)
 
-                self.gcode[idx] = new_line
+            # if drawing
+            if z == 1:
+                # set Z to part outer radius, plus the offset
+                z = db.settings["z_height"] - \
+                    r.radius + db.settings["z_offset"]
+            else:
+                # set Z to part outer radius, plus the lift height
+                z = db.settings["z_height"] - \
+                    r.radius - db.settings["z_lift"]
+
+            z = round(z, 2)
+
+            new_line = line[:m.start(1)] + str(z) + line[m.end(1):]
+
+            self.gcode[idx] = new_line
+
+    def correct_colours(self, idx, line):
+        # Replace generic colour change commands with correct GCODE
+        m = re.search("<C(\d+?)>", line)
+
+        # If a colour change command
+        if m:
+            colour = m.string[m.start(1): m.end(1)]
+            colour = float(colour)
+
+            # Update command correctly based on requested colour
+            command = "G0B" + \
+                str(db.settings["colour_origin"] +
+                    colour * db.settings["colour_offset"])
+
+            self.gcode[idx] = command
 
 
 class webserver:
@@ -213,7 +246,7 @@ class webserver:
         Handler = http.server.SimpleHTTPRequestHandler
 
         with socketserver.TCPServer(("", PORT), Handler) as httpd:
-            print("serving at port", PORT)
+            log.info(f"serving at port {PORT}")
             httpd.serve_forever()
 
 
@@ -261,13 +294,13 @@ class database:
         "$123": 10,     # A Acceleration, mm/sec^2
         "$124": 10,     # B Acceleration, °/sec^2
         "$130": 200,    # X Max travel, mm
-        "$131": 200,    # Y Max travel, °
+        "$131": 720,    # Y Max travel, °
         "$132": 200,    # Z Max travel, mm
         "$133": 200,    # A Max travel, mm
         "$134": 360,    # B Max travel, °
 
         # --- Printer specific ---
-        "port": "grbl-1.1h/ttyGRBL",  # TODO CHANGE to /dev/ttyUSB1
+        "port": "/dev/ttyS3",
 
         # --- General settings ---
         "warning_percentage": 10,
@@ -281,6 +314,7 @@ class database:
         # --- Batch settings ---
         "batch_origin": 110,
         "batch_offset": 100,
+        "scanner_offset": 50,
 
         # --- Colour settings ---
         "colour_origin": 10,
@@ -411,10 +445,6 @@ class websocket:
         return data
 
     def handler(self, data):
-        # Handles incoming commands
-        def emergency_stop(self, payload):
-            print("EST")
-
         def print_settings(self, payload):
             try:
                 settings = loads(payload)
@@ -531,8 +561,17 @@ class websocket:
 
             return "DONE"
 
+        def change_batch(self, payload):
+            if payload in range(5):
+                g.change_batch(payload)
+            elif payload == -1:
+                g.send(["G0A0"], True)
+            else:
+                return "ERROR"
+
+            return "DONE"
+
         switcher = {
-            "EST": emergency_stop,
             "SET": print_settings,
             "DBS": database_set,
             "GRB": send_manual,
@@ -546,6 +585,7 @@ class websocket:
             "RLC": reset_logs_counter,
             "GCS": get_current_status,
             "LGT": toggle_lighting,
+            "BTC": change_batch,
         }
 
         # Separate JSON string into command and payload
@@ -573,6 +613,11 @@ class websocket:
                 log.debug(f'WSKT < {command} (long payload)')
 
         return self.payloader(command, response)
+
+
+class vision:
+    def scan(self):
+        pass
 
 
 class grbl:
@@ -627,8 +672,8 @@ class grbl:
 
             time.sleep(2)  # Wait for grbl to initialize
 
-            for i in range(2):
-                self.read()
+            for i in range(3):
+                log.debug(self.read())
 
             self.s.flushInput()  # Flush startup text in serial input
             self.connected = True
@@ -761,6 +806,29 @@ class grbl:
             self.send(["M8"], True)
             self.lighting = False
 
+    def change_batch(self, batch, scan=False):
+        if not scan:
+            # Generate GCODE to move requested part under printhead
+            command = "G0A" + \
+                str(db.settings["batch_origin"] +
+                    batch * db.settings["batch_offset"])
+        else:
+            # Generate GCODE to move requested part under scanner
+            command = "G0A" + \
+                str(db.settings["batch_origin"] +
+                    batch * db.settings["batch_offset"] + db.settings["scanner_offset"])
+
+        # Send to grbl
+        self.send([command], True)
+
+    def offset_y(self, offset):
+        log.debug(f"Setting Y offset to {offset}")
+        # Setup offset value
+        command = "G10 L2 P1 Y" + offset
+
+        # Send command to grbl
+        self.send([command], True)
+
     def send_status_query(self):
         # Built in GRBL status report, in format:
         # <Idle|MPos:0.000,0.000,0.000|FS:0.0,0>
@@ -796,10 +864,11 @@ class grbl:
 
         if self.check:
             log.info("Check mode enabled!")
+            log.info("Inspect logs once complete if any errors occur.")
         else:
             log.info("Check mode disabled!")
 
-        self.read()
+        log.info(self.read())
 
         # while True:
         #     out = self.s.readline().strip()  # Wait for grbl response with carriage return
@@ -828,14 +897,9 @@ class grbl:
             r.status["grbl_y"] = "Y" + MPos[1]
             r.status["grbl_z"] = "Z" + MPos[2]
 
-        # Message received
-        if re.search("MSG", output):
-            message = re.findall(
-                "^\[MSG:([\w\W]+?)\|([\w\W])+?\]$", output)
-
-            # Set if lockout detected and needs homing
-            if message[0] == "\'$H\'":
-                r.status["grbl_lockout"] = 1
+        # Lockout message warning
+        if re.search("\$X", output) or re.search("error:9", output):
+            r.status["grbl_lockout"] = 1
 
         return output
 
@@ -979,6 +1043,9 @@ if __name__ == "__main__":
     # Connect grbl
     g = grbl()  # GRBL object
     g.connect()  # Serial connection
+
+    # Connect vision class
+    v = vision()
 
     # Set up monitoring thread
     g.monitor()

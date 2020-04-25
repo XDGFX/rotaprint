@@ -79,6 +79,14 @@
             "help": "Distance between each component in batch axis."
         },
         {
+            "title": "Scanner Offset",
+            "id": "scanner_offset",
+            "unit": "mm",
+            "advanced": true,
+            "category": "batch",
+            "help": "Distance between printhead and scanner in batch axis."
+        },
+        {
             "title": "Colour Origin",
             "id": "colour_origin",
             "unit": "°",

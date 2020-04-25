@@ -983,6 +983,11 @@ class COM {
         }, 1000);
     }
 
+    static rotate_y(element) {
+        var position = element.value
+        WS.ws.send(COM.payloader("GRB", "G0Y".concat(position)))
+    }
+
 }
 
 // Setup event handlers
