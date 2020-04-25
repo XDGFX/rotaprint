@@ -163,6 +163,10 @@ input[type=number] {
   opacity: 40%;
 }
 
+.quickview-body {
+  overscroll-behavior: contain;
+}
+
 .has-text-centered tr,
 .has-text-centered td {
   text-align: center !important;

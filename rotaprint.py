@@ -51,10 +51,14 @@ class rotaprint:
         "parts_complete": 0,
         "time_remaining": -1,
         "operation": "Idle",
+
         "grbl_operation": "Idle",
         "grbl_x": 0,
         "grbl_y": 0,
         "grbl_z": 0,
+
+        "grbl_lockout": 1,
+
         "print_progress": 0
     }
 
@@ -229,7 +233,7 @@ class database:
         "$11": 0.010,   # Junction deviation, mm
         "$12": 0.002,   # Arc tolerance, mm
         "$13": 0,       # Report inches, boolean
-        "$20": 0,       # Soft limits, boolean !!! Should be enabled for real use
+        "$20": 0,       # Soft limits, boolean
         "$21": 0,       # Hard limits, boolean
         "$22": 1,       # Homing cycle, boolean
         "$23": 0,       # Homing dir invert, mask
@@ -240,26 +244,27 @@ class database:
         "$30": 1000,    # Max spindle speed, RPM
         "$31": 0,       # Min spindle speed, RPM
         "$32": 1,       # Laser mode, boolean
+        "$33": 0,       # Camera pin invert, boolean
         "$100": 250,    # X steps/mm
-        "$101": 250,    # Y steps/mm  TODO VARIES
+        "$101": 250,    # Y steps/°
         "$102": 250,    # Z steps/mm
         "$103": 250,    # A steps/mm
-        "$104": 250,    # B steps/mm
+        "$104": 250,    # B steps/°
         "$110": 500,    # X Max rate, mm/min
-        "$111": 500,    # Y Max rate, mm/min  TODO VARIES
+        "$111": 500,    # Y Max rate, °/min
         "$112": 500,    # Z Max rate, mm/min
         "$113": 500,    # A Max rate, mm/min
-        "$114": 500,    # B Max rate, mm/min
+        "$114": 500,    # B Max rate, °/min
         "$120": 10,     # X Acceleration, mm/sec^2
-        "$121": 10,     # Y Acceleration, mm/sec^2
+        "$121": 10,     # Y Acceleration, °/sec^2
         "$122": 10,     # Z Acceleration, mm/sec^2
         "$123": 10,     # A Acceleration, mm/sec^2
-        "$124": 10,     # B Acceleration, mm/sec^2
-        "$130": 200,    # X Max travel, mm  TODO VARIES
-        "$131": 200,    # Y Max travel, mm  TODO VARIES
+        "$124": 10,     # B Acceleration, °/sec^2
+        "$130": 200,    # X Max travel, mm
+        "$131": 200,    # Y Max travel, °
         "$132": 200,    # Z Max travel, mm
         "$133": 200,    # A Max travel, mm
-        "$134": 200,    # B Max travel, mm
+        "$134": 360,    # B Max travel, °
 
         # --- Printer specific ---
         "port": "grbl-1.1h/ttyGRBL",  # TODO CHANGE to /dev/ttyUSB1
@@ -276,6 +281,10 @@ class database:
         # --- Batch settings ---
         "batch_origin": 110,
         "batch_offset": 100,
+
+        # --- Colour settings ---
+        "colour_origin": 10,
+        "colour_offset": 90,
 
         # --- Option defaults ---
         "length": 100,
@@ -444,8 +453,9 @@ class websocket:
             # Send manual command to grbl
             if g.connected:
                 try:
-                    g.s.write(payload.encode())
-                    log.info(f"GRBL > 7: {g.read()}")
+                    data = payload + "\n"
+                    g.s.write(data.encode())
+                    log.info(f"GRBL > : {g.read()}")
                     return "DONE"
                 except:
                     r.except_logger()
@@ -473,8 +483,9 @@ class websocket:
                 r.pool.submit(r.print_sequence())
                 return "DONE"
 
-        # def home(self, payload):
-        #     send
+        def home(self, payload):
+            g.home()
+            return "DONE"
 
         def fetch_settings(self, payload):
             # Return all database settings in JSON format
@@ -515,6 +526,11 @@ class websocket:
 
             return data
 
+        def toggle_lighting(self, payload):
+            g.toggle_lighting()
+
+            return "DONE"
+
         switcher = {
             "EST": emergency_stop,
             "SET": print_settings,
@@ -522,13 +538,14 @@ class websocket:
             "GRB": send_manual,
             "GCD": receive_gcode,
             "PRN": print_now,
-            # "HME": home,
+            "HME": home,
             "FTS": fetch_settings,
             "RQV": fetch_value,
             "RCN": reconnect_printer,
             "LOG": return_logs,
             "RLC": reset_logs_counter,
             "GCS": get_current_status,
+            "LGT": toggle_lighting,
         }
 
         # Separate JSON string into command and payload
@@ -573,6 +590,9 @@ class grbl:
     # Connected flag
     connected = False
 
+    # Lighting toggle
+    lighting = False
+
     def __init__(self):
         # Get GRBL settings
         self.settings, _ = db.get_settings()
@@ -597,7 +617,7 @@ class grbl:
             # Connect to serial
             log.debug(f"Connecting on port {self.port}...")
             # self.s = serial.Serial(self.port, 115200, timeout=1)
-            self.s = serial.Serial(self.port, 115200)
+            self.s = serial.Serial(self.port, 115200, timeout=1)
 
             log.info("Connection success!")
 
@@ -605,13 +625,10 @@ class grbl:
             log.debug("GRBL < \"\\r\\n\\r\\n\"")
             self.s.write("\r\n\r\n".encode())
 
-            # temp_out = self.read()
-            # if temp_out.find('error:9') >= 0:
-            #     self.clear_lockout()
             time.sleep(2)  # Wait for grbl to initialize
 
-            # # Clear any lockout alarms
-            # self.clear_lockout()
+            for i in range(2):
+                self.read()
 
             self.s.flushInput()  # Flush startup text in serial input
             self.connected = True
@@ -623,7 +640,7 @@ class grbl:
             r.except_logger()
 
     def clear_lockout(self):
-        log.warning("Lockout error detected! Attempting to override...")
+        log.warning("Overriding lockout error!")
         self.send(["$X"], True)
 
     def send_settings(self):
@@ -721,7 +738,28 @@ class grbl:
     def home(self):
         # Built-in GRBL homing functionality
         log.info("Homing machine...")
-        self.send(['$H'], True)
+        self.send(["$H"], True)
+
+    def toggle_lighting(self, manual=None):
+        # Turn lights and laser on or off
+        log.info("Toggling the lights...")
+
+        I = db.settings["$33"]
+        X = manual == None
+        L = self.lighting
+        M = manual
+
+        # Turn lights on if:
+        #   - lighting is off already, and manual is not true or
+        #   - manual is true
+        if (M and not I) or (X and not I and not L) or (M == 0 and I) or (X and I and not L):
+            # Turn lights on
+            self.send(["M9"], True)
+            self.lighting = True
+        else:
+            # Turn lights off
+            self.send(["M8"], True)
+            self.lighting = False
 
     def send_status_query(self):
         # Built in GRBL status report, in format:
@@ -761,15 +799,17 @@ class grbl:
         else:
             log.info("Check mode disabled!")
 
-        while True:
-            out = self.s.readline().strip()  # Wait for grbl response with carriage return
-            if out.find('error') >= 0:
-                log.debug(f"GRBL > {out}")
-                log.error(
-                    "Failed to set Grbl check-mode. Attempting to reconnect...")
-                self.reconnect()
-            elif out.find('ok') >= 0:
-                log.debug(f'GRBL > {out}')
+        self.read()
+
+        # while True:
+        #     out = self.s.readline().strip()  # Wait for grbl response with carriage return
+        #     if out.find('error') >= 0:
+        #         log.debug(f"GRBL > {out}")
+        #         log.error(
+        #             "Failed to set Grbl check-mode. Attempting to reconnect...")
+        #         self.reconnect()
+        #     elif out.find('ok') >= 0:
+        #         log.debug(f'GRBL > {out}')
 
     def read(self):
         output = self.s.readline().strip().decode()
@@ -787,6 +827,15 @@ class grbl:
             r.status["grbl_x"] = "X" + MPos[0]
             r.status["grbl_y"] = "Y" + MPos[1]
             r.status["grbl_z"] = "Z" + MPos[2]
+
+        # Message received
+        if re.search("MSG", output):
+            message = re.findall(
+                "^\[MSG:([\w\W]+?)\|([\w\W])+?\]$", output)
+
+            # Set if lockout detected and needs homing
+            if message[0] == "\'$H\'":
+                r.status["grbl_lockout"] = 1
 
         return output
 
@@ -835,8 +884,13 @@ class grbl:
                 g_count = 0
                 c_line = []
                 rx_buffer_size = 128
+                gcode_length = len(data)
+
                 for line in data:
                     l_count += 1  # Iterate line counter
+
+                    # Calculate percentage complete
+                    r.status["print_progress"] = (l_count / gcode_length) * 100
 
                     # Strip comments/spaces/new line and capitalize
                     l_block = re.sub(r'\s|\(.*?\)', '', line).upper()

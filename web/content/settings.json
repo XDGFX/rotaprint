@@ -79,6 +79,22 @@
             "help": "Distance between each component in batch axis."
         },
         {
+            "title": "Colour Origin",
+            "id": "colour_origin",
+            "unit": "°",
+            "advanced": true,
+            "category": "batch",
+            "help": "Distance between colour axis zero, and the first colour aligning with the part."
+        },
+        {
+            "title": "Colour Offset",
+            "id": "colour_offset",
+            "unit": "°",
+            "advanced": true,
+            "category": "batch",
+            "help": "Distance between each colour in colour axis."
+        },
+        {
             "title": "Length of Step Pulse",
             "id": "$0",
             "unit": "μs",
@@ -233,6 +249,14 @@
             "help": "When enabled (1), machine will move continuously between consecutive G1, G2, and G3 motions. When disabled, machine will operate more like a conventional CNC machine, pausing movement to allow spindle speed changes. This should not be required."
         },
         {
+            "title": "Camera Pin Invert",
+            "id": "$33",
+            "unit": "bool",
+            "advanced": true,
+            "category": "controller",
+            "help": "If the camera lights and laser come on when you want them off, invert change this setting"
+        },
+        {
             "title": "Step Ratio (X)",
             "id": "$100",
             "unit": "s/mm",
@@ -257,7 +281,7 @@
             "help": "Number of steps per mm of pen movement in Z axis"
         },
         {
-            "title": "Step Ratio (A)",
+            "title": "Step Ratio (A Batch)",
             "id": "$103",
             "unit": "s/mm",
             "advanced": false,
@@ -265,9 +289,9 @@
             "help": "Number of steps per mm of pen movement in A axis"
         },
         {
-            "title": "Step Ratio (B)",
+            "title": "Step Ratio (B Colour)",
             "id": "$104",
-            "unit": "s/mm",
+            "unit": "s/°",
             "advanced": false,
             "category": "movement",
             "help": "Number of steps per mm of pen movement in B axis"
@@ -297,7 +321,7 @@
             "help": "Maximum rate at which stepper motor controlling Z axis will run. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
         },
         {
-            "title": "Max Rate (A)",
+            "title": "Max Rate (A Batch)",
             "id": "$113",
             "unit": "mm/m",
             "advanced": false,
@@ -305,9 +329,9 @@
             "help": "Maximum rate at which stepper motor controlling A axis will run."
         },
         {
-            "title": "Max Rate (B)",
+            "title": "Max Rate (B Colour)",
             "id": "$114",
-            "unit": "mm/m",
+            "unit": "°/m",
             "advanced": false,
             "category": "movement",
             "help": "Maximum rate at which stepper motor controlling B axis will run."
@@ -315,7 +339,7 @@
         {
             "title": "Acceleration (X)",
             "id": "$120",
-            "unit": "mm/m",
+            "unit": "mm/s²",
             "advanced": false,
             "category": "movement",
             "help": "Maximum acceleration of X axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
@@ -323,7 +347,7 @@
         {
             "title": "Acceleration (Y)",
             "id": "$121",
-            "unit": "°/m",
+            "unit": "°/s²",
             "advanced": true,
             "category": "movement",
             "help": "Maximum acceleration of Y axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
@@ -331,23 +355,23 @@
         {
             "title": "Acceleration (Z)",
             "id": "$122",
-            "unit": "mm/m",
+            "unit": "mm/s²",
             "advanced": false,
             "category": "movement",
             "help": "Maximum acceleration of Z axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
         },
         {
-            "title": "Acceleration (A)",
+            "title": "Acceleration (A Batch)",
             "id": "$123",
-            "unit": "mm/m",
+            "unit": "mm/s²",
             "advanced": false,
             "category": "movement",
             "help": "Maximum acceleration of A axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
         },
         {
-            "title": "Acceleration (B)",
+            "title": "Acceleration (B Colour)",
             "id": "$124",
-            "unit": "mm/m",
+            "unit": "°/s²",
             "advanced": false,
             "category": "movement",
             "help": "Maximum acceleration of B axis during motion. Can be tuned by increasing until steppers stall, and then set 10-20% below this value."
@@ -377,7 +401,7 @@
             "help": "Maximum travel of Z axis during motion."
         },
         {
-            "title": "Max Travel (A)",
+            "title": "Max Travel (A Batch)",
             "id": "$133",
             "unit": "mm",
             "advanced": false,
@@ -385,9 +409,9 @@
             "help": "Maximum travel of A axis during motion."
         },
         {
-            "title": "Max Travel (B)",
+            "title": "Max Travel (B Colour)",
             "id": "$134",
-            "unit": "mm",
+            "unit": "°",
             "advanced": false,
             "category": "movement",
             "help": "Maximum travel of B axis during motion."

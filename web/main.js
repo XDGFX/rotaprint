@@ -226,14 +226,14 @@ class CG {
 
     // Toggle advanced settings in settings page
     static toggle_advanced_settings() {
-        checked = document.getElementById("switch_advanced_settings").checked
-        advanced = document.getElementById("settings_column").querySelectorAll(".advanced_setting");
+        var checked = document.getElementById("switch_advanced_settings").checked
+        var advanced = document.getElementById("settings_column").querySelectorAll(".advanced_setting");
 
         for (var i = 0; i < advanced.length; i++) {
             advanced[i].disabled = !checked
         }
 
-        field = document.getElementById("advanced_settings_field")
+        var field = document.getElementById("advanced_settings_field")
         if (checked) {
             field.classList.remove("has-text-grey-lighter")
             field.classList.add("has-text-danger")
@@ -276,7 +276,7 @@ class CG {
 
     // Set settings value to default
     static set_default(input_id) {
-        var default_value = default_settings[input_id.replace("setting_", "")]
+        var default_value = COM.default_settings[input_id.replace("setting_", "")]
         var element = document.getElementById(input_id)
         element.value = default_value
         this.check_changed(element)
@@ -723,12 +723,17 @@ class COM {
         } else {
             var current_status = JSON.parse(data)
 
-            // If printer is not idle, redirect to monitor page
+            // Redirect to correct page based on current status
+            if ((page != "monitor") && (current_status["grbl_operation"] != "Idle")) {
+                window.location.replace("monitor.html");
+                return
+            } else if ((page == "monitor") && (current_status["grbl_operation"] == "Idle")) {
+                window.location.replace("index.html");
+                return
+            }
+
+            // Exit here if not on monitor page
             if (page != "monitor") {
-                if (current_status["operation"] != "Idle") {
-                    window.location.replace("monitor.html");
-                }
-                // If printer is idle, exit this function
                 return
             }
 
@@ -758,7 +763,7 @@ class COM {
                     )
                 }
 
-                if ((id != null) && id.value != current_status[key]) {
+                if ((id != null) && (id.value != current_status[key])) {
                     id.value = current_status[key]
                 }
             }
