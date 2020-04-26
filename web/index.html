@@ -124,21 +124,44 @@
                 <div>
                     <div class="columns is-vcentered">
                         <div class="column">
+
+                            <button class="button" id="button_home" onclick="COM.home()">Home</button>
+
+                            <div class="columns">
+                                <div class="column">
+                                    <div class="field">
+                                        <label class="label">Align Y (Coarse)</label>
+                                        <p class="control is-expanded">
+                                            <input id="input_batch_coarse" class="slider is-fullwidth" step="5" min="0"
+                                                max="360" value="0" type="range" oninput="COM.rotate_y()"
+                                                autocomplete="off">
+                                            <ul class="range-labels has-text-grey-light">
+                                                <li style="display:inline;">0</li>
+                                                <li style="display:inline;">180</li>
+                                                <li style="display:inline;">360</li>
+                                            </ul>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <div class="field">
+                                        <label class="label">Align Y (Fine)</label>
+                                        <p class="control is-expanded">
+                                            <input id="input_batch_fine" class="slider is-fullwidth" step="0.1" min="-5"
+                                                max="5" value="0" type="range" oninput="COM.rotate_y()"
+                                                autocomplete="off">
+                                            <ul class="range-labels has-text-grey-light">
+                                                <li style="display:inline;">-5</li>
+                                                <li style="display:inline;">0</li>
+                                                <li style="display:inline;">+5</li>
+                                            </ul>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
                             <button class="button" id="button_print" onclick="COM.print_now()" autocomplete="off"
                                 disabled>Print</button>
-
-                            <div class="field">
-                                <label class="label">Align Y</label>
-                                <p class="control is-expanded">
-                                    <input id="input_batch" class="slider is-fullwidth" step="0.1" min="0" max="360"
-                                        value="0" type="range" oninput="COM.rotate_y(this)" autocomplete="off">
-                                    <ul class="range-labels has-text-grey-light">
-                                        <li style="display:inline;">0</li>
-                                        <li style="display:inline;">180</li>
-                                        <li style="display:inline;">360</li>
-                                    </ul>
-                                </p>
-                            </div>
 
                         </div>
                         <div class="column" id="primary_settings_column">

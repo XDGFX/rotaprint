@@ -56,7 +56,6 @@ class rotaprint:
         "grbl_x": 0,
         "grbl_y": 0,
         "grbl_z": 0,
-
         "grbl_lockout": 1,
 
         "print_progress": 0
@@ -116,6 +115,8 @@ class rotaprint:
     def print_sequence(self):
         # Allow existing timers to end
         self.active = False
+
+        time.sleep(2)
 
         # Indicate machine is active
         self.active = True
@@ -684,10 +685,6 @@ class grbl:
             log.error("Unable to connect to printer!")
             r.except_logger()
 
-    def clear_lockout(self):
-        log.warning("Overriding lockout error!")
-        self.send(["$X"], True)
-
     def send_settings(self):
         log.info("Checking if firmware settings need updating...")
 
@@ -720,7 +717,7 @@ class grbl:
             if temp_out.find('error:9') >= 0:
                 log.warning(
                     "Lockout error detected while attempting to send settings!")
-                self.clear_lockout()
+                force_settings = True
             elif temp_out.find('error') >= 0:
                 log.debug(f"GRBL > {temp_out}")
                 log.error(
@@ -934,6 +931,8 @@ class grbl:
                             log.warning(f"GRBL > {str(l_count)}: {out}")
                             error_count += 1
                             break
+                        elif out.find('ALARM') >= 0:
+                            log.error(f"GRBL > {str(l_count)}: {out}")
                         else:
                             log.debug(f"GRBL > {out}")
 

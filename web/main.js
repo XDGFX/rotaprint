@@ -412,6 +412,9 @@ class WS {
                 case "GCS":
                     COM.get_current_status(payload);
                     break
+                case "HME":
+                    COM.home(payload);
+                    break
             }
         };
 
@@ -868,9 +871,40 @@ class COM {
                 COM.update_logs()
             }
 
-            // data = data.replace(/(?:\r\n|\r|\n)/g, "<*>")
-            // data = data.replace(/(<#>)/g, "\n")
             data = data.split("<*>")
+
+            // Check data for specific errors
+            for (var i = 0; i < data.length; i += 1) {
+                var message = data[i]
+
+                // Grbl error message
+                if (message.match(/error:\d{1,2}/)) {
+                    // Send warning of an error
+                    bulmaToast.toast({
+                        message: "An error occured with the firmware. There is a possibility this error can be ignored.\nCheck logs for more details.",
+                        type: "is-warning",
+                        position: "bottom-right",
+                        dismissible: true,
+                        closeOnClick: false,
+                        duration: 4000,
+                        animate: { in: "fadeInRight", out: "fadeOutRight" }
+                    });
+                }
+
+                // Grbl alarm message
+                if (message.match(/ALARM:\d{1,2}/)) {
+                    // Send warning of an error
+                    bulmaToast.toast({
+                        message: "The firmware is reporting an alarm! Check logs for details",
+                        type: "is-danger",
+                        position: "bottom-right",
+                        dismissible: true,
+                        closeOnClick: false,
+                        duration: 99999999,
+                        animate: { in: "fadeInRight", out: "fadeOutRight" }
+                    });
+                }
+            }
 
             this.logs_array = this.logs_array.concat(data)
 
@@ -983,11 +1017,36 @@ class COM {
         }, 1000);
     }
 
-    static rotate_y(element) {
-        var position = element.value
+    // Rotate part for alignment
+    static rotate_y() {
+        var position_coarse = document.getElementById("input_batch_coarse").value
+        var position_fine = document.getElementById("input_batch_fine").value
+        var position = Number(position_coarse) + Number(position_fine)
         WS.ws.send(COM.payloader("GRB", "G0Y".concat(position)))
     }
 
+    // Request homing sequence
+    static home(data) {
+        // Send command
+        if (data == null) {
+            WS.ws.send(COM.payloader("HME"))
+            return
+        }
+
+        if (data == "DONE") {
+            // Send notification success
+            bulmaToast.toast({
+                message: "Requested homing cycle!",
+                type: "is-success",
+                position: "bottom-right",
+                dismissible: true,
+                closeOnClick: false,
+                duration: 4000,
+                animate: { in: "fadeInRight", out: "fadeOutRight" }
+            });
+        }
+
+    }
 }
 
 // Setup event handlers
