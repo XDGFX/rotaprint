@@ -56,6 +56,11 @@ class CG {
         response = await fetch("content/settings.json", { cache: "reload" })  // TODO remove cache "reload"
         var settings_json = await response.text()
         this.settings_json = JSON.parse(settings_json)
+
+        // Load and parse errors json
+        response = await fetch("content/errors.json", { cache: "reload" })  // TODO remove cache "reload"
+        var errors_json = await response.text()
+        this.errors_json = JSON.parse(errors_json)
     }
 
     // Generate HTML content on index.html using external templates and content
@@ -415,6 +420,12 @@ class WS {
                 case "HME":
                     COM.home(payload);
                     break
+                case "FHD":
+                    COM.feed_hold(payload);
+                    break
+                case "FRL":
+                    COM.feed_release(payload);
+                    break
             }
         };
 
@@ -727,10 +738,10 @@ class COM {
             var current_status = JSON.parse(data)
 
             // Redirect to correct page based on current status
-            if ((page != "monitor") && (current_status["grbl_operation"] != "Idle")) {
+            if ((page != "monitor") && (current_status["grbl_operation"] != "Idle" && current_status["grbl_operation"] != "Done")) {
                 window.location.replace("monitor.html");
                 return
-            } else if ((page == "monitor") && (current_status["grbl_operation"] == "Idle")) {
+            } else if ((page == "monitor") && (current_status["grbl_operation"] == "Idle" || current_status["grbl_operation"] == "Done")) {
                 window.location.replace("index.html");
                 return
             }
@@ -738,6 +749,33 @@ class COM {
             // Exit here if not on monitor page
             if (page != "monitor") {
                 return
+            }
+
+            // Update alarm field
+            var div = document.getElementById("status_alarm")
+            if (current_status["grbl_operation"] == "Alarm") {
+                div.classList.remove("is-success")
+                div.classList.add("is-danger")
+            } else {
+                div.classList.add("is-success")
+                div.classList.remove("is-danger")
+            }
+
+            // Enable 'Complete' button of run is finished
+            if (current_status["grbl_operation"] == "Done") {
+                document.getElementById("button_complete").disabled = false
+            }
+
+            // Update status indicator colour based on current operation
+            if (current_status["grbl_operation"].includes("Hold")) {
+                document.getElementById("status_grbl").classList.remove("is-success")
+                document.getElementById("status_grbl").classList.add("is-warning")
+            } else if (current_status["grbl_operation"] == "Run" || current_status["grbl_operation"] == "Done") {
+                document.getElementById("status_grbl").classList.add("is-success")
+                document.getElementById("status_grbl").classList.remove("is-warning")
+            } else {
+                document.getElementById("status_grbl").classList.remove("is-success")
+                document.getElementById("status_grbl").classList.remove("is-warning")
             }
 
             var id
@@ -788,10 +826,14 @@ class COM {
         // Get current print settings
         var div = document.querySelector("#primary\_settings\_column")
 
-        var check_mode = div.querySelector("#switch_check_mode").value
+        var check_mode = div.querySelector("#switch_check_mode").checked
         var radius = div.querySelector("#input_radius").value
         var length = div.querySelector("#input_length").value
         var batch = div.querySelector("#input_batch").value
+
+        var position_coarse = document.getElementById("input_batch_coarse").value
+        var position_fine = document.getElementById("input_batch_fine").value
+        var offset = Number(position_coarse) + Number(position_fine)
 
         data = JSON.stringify(
             {
@@ -799,6 +841,7 @@ class COM {
                 "radius": radius,
                 "length": length,
                 "batch": batch,
+                "offset": offset
             }
         )
 
@@ -880,15 +923,20 @@ class COM {
                 // Grbl error message
                 if (message.match(/error:\d{1,2}/)) {
                     // Send warning of an error
-                    bulmaToast.toast({
-                        message: "An error occured with the firmware. There is a possibility this error can be ignored.\nCheck logs for more details.",
-                        type: "is-warning",
-                        position: "bottom-right",
-                        dismissible: true,
-                        closeOnClick: false,
-                        duration: 4000,
-                        animate: { in: "fadeInRight", out: "fadeOutRight" }
-                    });
+                    // bulmaToast.toast({
+                    //     message: "An error occured with the firmware. There is a possibility this error can be ignored.\nCheck logs for more details.",
+                    //     type: "is-warning",
+                    //     position: "bottom-right",
+                    //     dismissible: true,
+                    //     closeOnClick: false,
+                    //     duration: 4000,
+                    //     animate: { in: "fadeInRight", out: "fadeOutRight" }
+                    // });
+
+                    if (page == "monitor") {
+                        var id = message.match(/error:(\d{1,2})/)[1]
+                        document.getElementById("status_latest_error").innerHTML = id.concat(" - ", CG.errors_json[Number(id) - 1])
+                    }
                 }
 
                 // Grbl alarm message
@@ -1046,6 +1094,48 @@ class COM {
             });
         }
 
+    }
+
+    static feed_hold(data) {
+        // Send command
+        if (data == null) {
+            WS.ws.send(COM.payloader("FHD"))
+            return
+        }
+
+        if (data == "DONE") {
+            // Send notification success
+            bulmaToast.toast({
+                message: "Feed hold received",
+                type: "is-success",
+                position: "bottom-right",
+                dismissible: true,
+                closeOnClick: false,
+                duration: 4000,
+                animate: { in: "fadeInRight", out: "fadeOutRight" }
+            });
+        }
+    }
+
+    static feed_release(data) {
+        // Send command
+        if (data == null) {
+            WS.ws.send(COM.payloader("FRL"))
+            return
+        }
+
+        if (data == "DONE") {
+            // Send notification success
+            bulmaToast.toast({
+                message: "Continue request received",
+                type: "is-success",
+                position: "bottom-right",
+                dismissible: true,
+                closeOnClick: false,
+                duration: 4000,
+                animate: { in: "fadeInRight", out: "fadeOutRight" }
+            });
+        }
     }
 }
 

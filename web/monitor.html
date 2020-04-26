@@ -93,10 +93,10 @@
                             </article>
                         </div>
                         <div class="tile is-parent">
-                            <article class="tile is-child notification is-success">
+                            <article id="status_grbl" class="tile is-child notification is-success">
                                 <div>
-                                    <p class="heading">Operation</p>
-                                    <p id="display_operation" class="subtitle">Idle</p>
+                                    <p class="heading">Status</p>
+                                    <p id="display_grbl_operation" class="subtitle">Idle</p>
                                 </div>
                             </article>
                         </div>
@@ -118,24 +118,25 @@
 
                     <div class="tile is-ancestor">
                         <div class="tile">
-                            <div class="tile is-parent">
-                                <article class="tile is-child notification is-success" style="padding:0">
+                            <div class="tile is-parent is-3">
+                                <article id="status_alarm" class="tile is-child notification is-success"
+                                    style="padding:0">
                                     <span class="icon is-large is-fullwidth">
                                         <i class="fas fa-2x fa-bell"></i>
                                     </span>
                                 </article>
                             </div>
-                            <div class="tile is-parent">
+                            <div class="tile is-parent is-3">
                                 <article class="tile is-child notification">
                                     <p id="display_grbl_x" class="is-size-3"></p>
                                 </article>
                             </div>
-                            <div class="tile is-parent">
+                            <div class="tile is-parent is-3">
                                 <article class="tile is-child notification">
                                     <p id="display_grbl_y" class="is-size-3"></p>
                                 </article>
                             </div>
-                            <div class="tile is-parent">
+                            <div class="tile is-parent is-3">
                                 <article class="tile is-child notification">
                                     <p id="display_grbl_z" class="is-size-3"></p>
                                 </article>
@@ -149,7 +150,7 @@
                                 <article class="tile is-child notification">
                                     <div>
                                         <p class="heading">Latest error</p>
-                                        <p class="subtitle">20 - Unsupported or invalid g-code command found in block.
+                                        <p id="status_latest_error" class="subtitle">No errors!
                                         </p>
                                     </div>
                                 </article>
@@ -160,18 +161,7 @@
                     <div class="tile is-ancestor">
                         <div class="tile">
                             <div class="tile is-parent">
-                                <button onclick="COM.send_custom_code('GRB', '0x18')"
-                                    class="tile is-child notification has-text-centered button is-warning"
-                                    style="padding: 0; height: 100%;">
-                                    <div>
-                                        <i class="fas fa-2x fa-stop"></i>
-                                        <span class="heading">Soft
-                                            Reset</span>
-                                    </div>
-                                </button>
-                            </div>
-                            <div class="tile is-parent">
-                                <button onclick="COM.send_custom_code('GRB', '!')"
+                                <button onclick="COM.feed_hold()"
                                     class="tile is-child notification has-text-centered button is-warning"
                                     style="padding: 0; height: 100%;">
                                     <div>
@@ -182,7 +172,7 @@
                                 </button>
                             </div>
                             <div class="tile is-parent">
-                                <button onclick="COM.send_custom_code('GRB', '~')"
+                                <button onclick="COM.feed_release()"
                                     class="tile is-child notification has-text-centered button is-warning"
                                     style="padding: 0; height: 100%;">
                                     <div>
@@ -191,9 +181,9 @@
                                     </div>
                                 </button>
                             </div>
-                            <div class="tile is-parent">
-                                <button class="tile is-child notification has-text-centered button"
-                                    style="padding:0; height: 100%;" disabled>
+                            <div class="tile is-parent is-6">
+                                <button id="button_complete" class="tile is-child notification has-text-centered button"
+                                    style="padding:0; height: 100%;" onclick="window.location.href=''" disabled>
                                     <div>
                                         <i class="fas fa-2x fa-check"></i>
                                         <span class="heading">Complete</span>

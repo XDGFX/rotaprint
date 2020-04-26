@@ -46,16 +46,25 @@ class rotaprint:
     # Number of parts in batch / int
     batch = ""
 
+    # Current batch part / int
+    batch_current = ""
+
+    # Current offset / float
+    offset = ""
+
+    # Fraction of total print remaining (where 0 is complete, 1 is not started)
+    remaining = 1
+
     status = {
         "time_elapsed": 0,
         "parts_complete": 0,
-        "time_remaining": -1,
+        "time_remaining": 0,
         "operation": "Idle",
 
         "grbl_operation": "Idle",
-        "grbl_x": 0,
-        "grbl_y": 0,
-        "grbl_z": 0,
+        "grbl_x": "",
+        "grbl_y": "",
+        "grbl_z": "",
         "grbl_lockout": 1,
 
         "print_progress": 0
@@ -102,14 +111,28 @@ class rotaprint:
         # Initialise start time
         start_time = time.time()
 
-        # Update time elapsed
         while self.active:
-            time_seconds = time.time() - start_time
+            # Do not update if on hold status
+            if re.match("Hold", self.status["grbl_operation"]):
+                start_time += 1
 
-            time_format = str(round(time_seconds / 60)) + \
-                "m " + str(round(time_seconds % 60)) + "s"
-
+            # Update time elapsed
+            time_elapsed = time.time() - start_time
+            time_format = str(round(time_elapsed / 60)) + \
+                "m " + str(round(time_elapsed % 60)) + "s"
             self.status["time_elapsed"] = time_format
+
+            # Estimate time remaining
+            try:
+                time_remaining = self.remaining * \
+                    (time_elapsed / (1 - self.remaining))
+            except ZeroDivisionError:
+                time_remaining = 0
+
+            time_format = "~" + str(round(time_remaining / 60)) + \
+                "m " + str(round(time_remaining % 60)) + "s"
+            self.status["time_remaining"] = time_format
+
             time.sleep(1)
 
     def print_sequence(self):
@@ -128,36 +151,66 @@ class rotaprint:
         gc.correct()
 
         # Change check mode on grbl if required
-        if self.check_mode != g.check_mode:
+        if self.check_mode != g.check:
             g.check_mode()
 
         # If check mode is enabled
-        if r.check_mode:
+        if self.check_mode:
+            self.batch = 1
+            self.batch_current = 0
             # Send gcode once
-            g.send(gc.gcode)
+            self.batch_new_part()
         else:
-            # Loop over number of components to print on
-            for batch in range(self.batch - 1):
-                # Go to scanner
-                g.change_batch(batch, True)
-
-                # Scan part
-                offset_y_value = v.scan()
-
-                # Setup WCS for correct print start position
-                g.offset_y(offset_y_value)
-
-                # Go to printer
-                g.change_batch(batch)
-
-                # Send gcode
-                g.send(gc.gcode)
-
-                # Update parts complete status
-                self.status["parts_complete"] = str(
-                    batch + 1) + " of " + str(self.batch + 1)
+            self.batch_current = 0
+            g.change_batch(self.batch_current, True)
+            # v.scan(self.offset)  # Update current alignment position, scan for future
+            self.batch_new_part()
 
         time.sleep(5)
+
+    def batch_new_part(self):
+        # If there are more parts to do
+        if self.batch_current < self.batch:
+            # Update parts complete status
+            self.status["parts_complete"] = str(
+                self.batch_current) + " of " + str(self.batch)
+
+            if self.batch_current > 0:
+                # Go to scanner
+                g.change_batch(self.batch_current, True)
+
+                # # Scan part
+                # self.offset = v.scan()
+
+            # Setup WCS for correct print start position
+            g.offset_y(self.offset)
+
+            # Go to printer
+            g.change_batch(self.batch_current)
+
+            # Send gcode
+            g.send(gc.gcode, batch=True)
+            # self.pool.submit(g.send, data=gc.gcode)
+
+        elif self.batch_current == self.batch:
+            # Update parts complete status
+            self.status["parts_complete"] = str(
+                self.batch_current) + " of " + str(self.batch)
+
+            self.status["print_progress"] = 100
+
+            self.status["time_remaining"] = "0m 0s"
+
+            # Check for final status update
+            try:
+                g.s.write('?\n'.encode())
+                g.read()
+            except:
+                r.except_logger()
+
+            self.active = False
+
+            self.status["grbl_operation"] = "Done"
 
 
 class gcode:
@@ -398,10 +451,11 @@ class websocket:
     # Class for interacting with front end GUI over websocket (to receive data)
     def connect(self):
         logging.info("Initialising websocket instance")
-        # Create thread to run websocket.listen as a daemon (in background)
+        # Create thread to run websocket.listen
         listenThread = threading.Thread(target=self.listen)
-        listenThread.daemon = False
         listenThread.start()
+
+        # r.pool.submit(self.listen)
 
         logging.info("Websocket initialised")
 
@@ -419,9 +473,11 @@ class websocket:
                     data = await websocket.recv()
 
                     # Send incoming messages to the handler, in parallel with main process
-                    future = r.pool.submit(self.handler, data)
-                    response = future.result()
+                    response = self.handler(data)
                     await websocket.send(response)
+                    # future = r.pool.submit(self.handler, data)
+                    # response = future.result()
+                    # await websocket.send(response)
             finally:
                 # Decriment connection counter when disconnected
                 self.connected -= 1
@@ -450,11 +506,11 @@ class websocket:
             try:
                 settings = loads(payload)
 
-                r.check_mode = [
-                    True if settings["check_mode"] == 'on' else False]
+                r.check_mode = settings["check_mode"]
                 r.radius = float(settings["radius"])
                 r.length = float(settings["length"])
                 r.batch = int(settings["batch"])
+                r.offset = float(settings["offset"])
 
                 return "DONE"
             except:
@@ -486,7 +542,7 @@ class websocket:
                 try:
                     data = payload + "\n"
                     g.s.write(data.encode())
-                    log.info(f"GRBL > : {g.read()}")
+                    log.info(f"GRBL > {g.read()}")
                     return "DONE"
                 except:
                     r.except_logger()
@@ -511,7 +567,10 @@ class websocket:
             else:
                 log.info("Sending gcode to printer...")
 
-                r.pool.submit(r.print_sequence())
+                # r.pool.submit(r.print_sequence())
+                thread = threading.Thread(target=r.print_sequence())
+                thread.start()
+                # r.print_sequence()
                 return "DONE"
 
         def home(self, payload):
@@ -572,6 +631,14 @@ class websocket:
 
             return "DONE"
 
+        def feed_hold(self, payload):
+            g.s.write("!".encode())
+            return "DONE"
+
+        def feed_release(self, payload):
+            g.s.write("~".encode())
+            return "DONE"
+
         switcher = {
             "SET": print_settings,
             "DBS": database_set,
@@ -587,6 +654,8 @@ class websocket:
             "GCS": get_current_status,
             "LGT": toggle_lighting,
             "BTC": change_batch,
+            "FHD": feed_hold,
+            "FRL": feed_release,
         }
 
         # Separate JSON string into command and payload
@@ -663,7 +732,7 @@ class grbl:
             # Connect to serial
             log.debug(f"Connecting on port {self.port}...")
             # self.s = serial.Serial(self.port, 115200, timeout=1)
-            self.s = serial.Serial(self.port, 115200, timeout=1)
+            self.s = serial.Serial(self.port, 115200, timeout=10)
 
             log.info("Connection success!")
 
@@ -821,7 +890,7 @@ class grbl:
     def offset_y(self, offset):
         log.debug(f"Setting Y offset to {offset}")
         # Setup offset value
-        command = "G10 L2 P1 Y" + offset
+        command = "G10 L2 P1 Y" + str(offset)
 
         # Send command to grbl
         self.send([command], True)
@@ -881,7 +950,7 @@ class grbl:
         output = self.s.readline().strip().decode()
 
         # Contains status report
-        if re.search("^[\\w\\W]+?>$", output):
+        if re.search("^<[\\w\\W]+?>$", output):
             # Current grbl operation
             r.status["grbl_operation"] = re.findall(
                 "<([\\w\\W]+?)\\|", output)[0]
@@ -890,9 +959,11 @@ class grbl:
             MPos = re.findall("MPos:([\\w\\W]+?)\\|", output)
             MPos = MPos[0].split(",")
 
-            r.status["grbl_x"] = "X" + MPos[0]
-            r.status["grbl_y"] = "Y" + MPos[1]
-            r.status["grbl_z"] = "Z" + MPos[2]
+            r.status["grbl_x"] = "<b>X</b>{:.2f}".format(float(MPos[0]))
+            r.status["grbl_y"] = "<b>Y</b>{:.2f}".format(float(MPos[1]))
+            r.status["grbl_z"] = "<b>Z</b>{:.2f}".format(float(MPos[2]))
+
+            return "REMOVE"
 
         # Lockout message warning
         if re.search("\$X", output) or re.search("error:9", output):
@@ -900,7 +971,7 @@ class grbl:
 
         return output
 
-    def send(self, data, settings_mode=False):
+    def send(self, data, settings_mode=False, batch=False):
         def _sender(self, **args):
             l_count = 0
             error_count = 0
@@ -909,6 +980,8 @@ class grbl:
             if settings_mode:
                 # Send settings file via simple call-response streaming method. Settings must be streamed
                 # in this manner since the EEPROM accessing cycles shut-off the serial interrupt.
+
+                self.is_run = True
 
                 for line in data:
                     l_count += 1  # Iterate the line counter
@@ -934,7 +1007,8 @@ class grbl:
                         elif out.find('ALARM') >= 0:
                             log.error(f"GRBL > {str(l_count)}: {out}")
                         else:
-                            log.debug(f"GRBL > {out}")
+                            if out.find('REMOVE') < 0:
+                                log.debug(f"GRBL > {out}")
 
             else:
                 # Send g-code program via a more agressive streaming protocol that forces characters into
@@ -953,7 +1027,11 @@ class grbl:
                     l_count += 1  # Iterate line counter
 
                     # Calculate percentage complete
-                    r.status["print_progress"] = (l_count / gcode_length) * 100
+                    r.status["print_progress"] = (g_count / gcode_length) * 100
+
+                    # Estimate time remaining
+                    r.remaining = ((r.batch - 1 - r.batch_current) +
+                                   (gcode_length - g_count) / gcode_length) / r.batch
 
                     # Strip comments/spaces/new line and capitalize
                     l_block = re.sub(r'\s|\(.*?\)', '', line).upper()
@@ -966,7 +1044,9 @@ class grbl:
                         out_temp = self.read()  # Wait for grbl response
 
                         if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
-                            log.debug(f"GRBL > {out_temp}")  # Debug response
+                            if out_temp.find('REMOVE') < 0:
+                                # Debug response
+                                log.debug(f"GRBL > {out_temp}")
                         else:
                             if out_temp.find('error') >= 0:
                                 error_count += 1
@@ -989,7 +1069,8 @@ class grbl:
                     out_temp = self.read()  # Wait for grbl response
 
                     if out_temp.find('ok') < 0 and out_temp.find('error') < 0:
-                        log.debug(f"GRBL > {out_temp}")  # Debug response
+                        if out_temp.find('REMOVE') < 0:
+                            log.debug(f"GRBL > {out_temp}")  # Debug response
                     else:
                         if out_temp.find('error') >= 0:
                             error_count += 1
@@ -1013,8 +1094,17 @@ class grbl:
                 else:
                     log.info("Check passed: No errors found in g-code program.")
 
+            # Request next batch if required
+            if batch:
+                r.batch_current += 1
+                r.batch_new_part()
+
         # Submit task to pool
-        r.pool.submit(_sender, self, data=data, settings_mode=settings_mode)
+        if batch:
+            r.pool.submit(_sender, self, data=data,
+                          settings_mode=settings_mode, batch=batch)
+        else:
+            _sender(self, data=data, settings_mode=settings_mode)
 
 
 if __name__ == "__main__":
