@@ -639,7 +639,7 @@ class COM {
                 var confirm_button = document.getElementById("confirm_settings_button")
                 if (!invalid_data) {
                     confirm_button.disabled = false
-                    confirm_button.innerHTML = "Save changes"
+                    confirm_button.innerHTML = "Save Changes"
                 } else {
                     confirm_button.disabled = true
                     confirm_button.innerHTML = "Invalid Data"
