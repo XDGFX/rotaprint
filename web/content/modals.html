@@ -17,10 +17,10 @@
                 onclick="CG.hide_help(this.parentElement.parentElement)"></button>
         </header>
         <section class="modal-card-body"><strong>Check mode</strong> is used to verify GCODE files are accepted by the
-            printer,before actual printing occurs. By enabling <b>check mode</b> the GCODE will be streamed to the
-            printer asnormal, but no movement will occur. <br><br>
+            printer, before actual printing occurs. By enabling <b>check mode</b> the GCODE will be streamed to the
+            printer as normal, but no movement will occur. <br><br>
             <div id="animation_check_mode"></div>An output log will be presented once complete (will take as long as a
-            normal print), for checking and verification. If you are happy with the output, disable check mode for real
+            normal print) for checking and verification. If you are happy with the output, disable check mode for real
             printing.
         </section>
         <footer class="modal-card-foot"><button class="button"
@@ -349,8 +349,8 @@
                 onclick="CG.hide_help(this.parentElement.parentElement)"></button>
         </header>
         <section class="modal-card-body">You can manually send commands to the backend for testing and debugging. It is
-            recommended to keepthe logs window open while using this. Incorrect commands can break the backend and
-            require a fullrestart - or worse!<br><br><b>Use at your own discretion.</b><br><br>
+            recommended to keep the logs window open while using this. Incorrect commands can break the backend and
+            require a full restart - or worse!<br><br><b>Use at your own discretion.</b><br><br>
             <table class="table table-bordered table-hover table-condensed">
                 <thead>
                     <tr>
@@ -362,70 +362,40 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>EST</td>
-                        <td>NONE</td>
-                        <td>Emergency Stop</td>
-                        <td>"DONE"</td>
-                    </tr>
-                    <tr>
-                        <td>BFH</td>
-                        <td>NONE</td>
-                        <td>Buffer hold; following messages are held</td>
-                        <td> </td>
-                    </tr>
-                    <tr>
-                        <td>BFR</td>
-                        <td>NONE</td>
-                        <td>Buffer release; held messages are sent as one</td>
-                        <td> </td>
-                    </tr>
-                    <tr>
-                        <td>LEN</td>
-                        <td>FLOAT</td>
-                        <td>Length of part to print on</td>
-                        <td> </td>
-                    </tr>
-                    <tr>
-                        <td>BAT</td>
-                        <td>INT</td>
-                        <td>Number of parts in batch (1-5)</td>
-                        <td> </td>
-                    </tr>
-                    <tr>
-                        <td>RAD</td>
-                        <td>FLOAT</td>
-                        <td>Radius of part to print on</td>
-                        <td> </td>
-                    </tr>
-                    <tr>
-                        <td>CHK</td>
-                        <td>BOOL</td>
-                        <td>Enable check mode</td>
-                        <td> </td>
+                        <td>SET</td>
+                        <td>JSON</td>
+                        <td>Settings for current print</td>
+                        <td>&quot;DONE&quot;</td>
                     </tr>
                     <tr>
                         <td>DBS</td>
                         <td>STRING</td>
                         <td>Database setting update</td>
-                        <td> </td>
+                        <td>&quot;DONE&quot;</td>
                     </tr>
                     <tr>
                         <td>GRB</td>
                         <td>STRING</td>
                         <td>Send manual code to GRBL</td>
-                        <td> </td>
+                        <td>&quot;DONE&quot;</td>
                     </tr>
                     <tr>
                         <td>GCD</td>
                         <td>NONE</td>
                         <td>Following message is GCODE blob</td>
-                        <td> </td>
+                        <td>&quot;DONE&quot;</td>
                     </tr>
                     <tr>
                         <td>PRN</td>
                         <td>NONE</td>
                         <td>Print now</td>
-                        <td> </td>
+                        <td>&quot;DONE&quot;</td>
+                    </tr>
+                    <tr>
+                        <td>HME</td>
+                        <td>NONE</td>
+                        <td>Home machine</td>
+                        <td>&quot;DONE&quot;</td>
                     </tr>
                     <tr>
                         <td>FTS</td>
@@ -443,13 +413,49 @@
                         <td>RCN</td>
                         <td>NONE</td>
                         <td>Reconnect to machine</td>
-                        <td>"DONE"</td>
+                        <td>&quot;DONE&quot;</td>
                     </tr>
                     <tr>
                         <td>LOG</td>
                         <td>NONE</td>
                         <td>Request log messages</td>
-                        <td>Logs</td>
+                        <td>Logs array</td>
+                    </tr>
+                    <tr>
+                        <td>RLC</td>
+                        <td>NONE</td>
+                        <td>Reset log counter</td>
+                        <td>&quot;DONE&quot;</td>
+                    </tr>
+                    <tr>
+                        <td>GCS</td>
+                        <td>NONE</td>
+                        <td>Get current machine status</td>
+                        <td>Status array</td>
+                    </tr>
+                    <tr>
+                        <td>LGT</td>
+                        <td>NONE</td>
+                        <td>Toggle lighting</td>
+                        <td>&quot;DONE&quot;</td>
+                    </tr>
+                    <tr>
+                        <td>BTC</td>
+                        <td>INT</td>
+                        <td>Move to batch component #. 0 moves to home</td>
+                        <td>&quot;DONE&quot;</td>
+                    </tr>
+                    <tr>
+                        <td>FHD</td>
+                        <td>NONE</td>
+                        <td>Feed hold</td>
+                        <td>&quot;DONE&quot;</td>
+                    </tr>
+                    <tr>
+                        <td>FRL</td>
+                        <td>NONE</td>
+                        <td>Release feed hold</td>
+                        <td>&quot;DONE&quot;</td>
                     </tr>
                 </tbody>
             </table>

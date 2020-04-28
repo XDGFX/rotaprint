@@ -37,6 +37,9 @@ class rotaprint:
     # Enables check mode to test gcode first
     check_mode = ""
 
+    # Enable scanning functionality
+    scan_mode = ""
+
     # Radius of part to print on / mm
     radius = ""
 
@@ -163,7 +166,14 @@ class rotaprint:
         else:
             self.batch_current = 0
             g.change_batch(self.batch_current, True)
-            # v.scan(self.offset)  # Update current alignment position, scan for future
+
+            if r.scan_mode:
+                # Setup WCS for correct scan start position
+                g.offset_y(self.offset)
+
+                # Scan for reference images
+                v.initial_scan()
+
             self.batch_new_part()
 
         time.sleep(5)
@@ -180,7 +190,8 @@ class rotaprint:
                 g.change_batch(self.batch_current, True)
 
                 # # Scan part
-                # self.offset = v.scan()
+                if r.scan_mode:
+                    self.offset = v.scan()
 
             # Setup WCS for correct print start position
             g.offset_y(self.offset)
@@ -379,6 +390,7 @@ class database:
         "radius": 10,
         "batch": 5,
         "check": False,
+        "scan": True,
     }
 
     # Convert dictionary to list of tuples for database connection
@@ -507,6 +519,7 @@ class websocket:
                 settings = loads(payload)
 
                 r.check_mode = settings["check_mode"]
+                r.scan_mode = settings["scan_mode"]
                 r.radius = float(settings["radius"])
                 r.length = float(settings["length"])
                 r.batch = int(settings["batch"])
@@ -622,8 +635,9 @@ class websocket:
             return "DONE"
 
         def change_batch(self, payload):
+            payload = int(payload)
             if payload in range(5):
-                g.change_batch(payload)
+                g.change_batch(payload, True)
             elif payload == -1:
                 g.send(["G0A0"], True)
             else:

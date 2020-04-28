@@ -21,7 +21,7 @@ class CG {
         var response
 
         // Load standard HTML setting
-        response = await fetch("templates/setting.html", { cache: "reload" })
+        response = await fetch("templates/setting.html")
         var html_settings = await response.text()
         this.html_settings = html_settings
             .replace(/\n/g, "")
@@ -29,7 +29,7 @@ class CG {
             .replace(/[ ]{2,}/g, " ")
 
         // Load advanced HTML setting
-        response = await fetch("templates/setting_advanced.html", { cache: "reload" })
+        response = await fetch("templates/setting_advanced.html")
         var html_settings_advanced = await response.text()
         this.html_settings_advanced = html_settings_advanced
             .replace(/\n/g, "")
@@ -45,7 +45,7 @@ class CG {
             .replace(/[ ]{2,}/g, " ")
 
         // Load modals html
-        response = await fetch("content/modals.html", { cache: "reload" })
+        response = await fetch("content/modals.html")
         var html_modals = await response.text()
         this.html_modals = html_modals
             .replace(/\n/g, "")
@@ -53,12 +53,12 @@ class CG {
             .replace(/[ ]{2,}/g, " ")
 
         // Load and parse settings json
-        response = await fetch("content/settings.json", { cache: "reload" })  // TODO remove cache "reload"
+        response = await fetch("content/settings.json")  // TODO remove cache "reload"
         var settings_json = await response.text()
         this.settings_json = JSON.parse(settings_json)
 
         // Load and parse errors json
-        response = await fetch("content/errors.json", { cache: "reload" })  // TODO remove cache "reload"
+        response = await fetch("content/errors.json")  // TODO remove cache "reload"
         var errors_json = await response.text()
         this.errors_json = JSON.parse(errors_json)
     }
@@ -118,7 +118,7 @@ class CG {
                     renderer: 'svg',
                     loop: true,
                     autoplay: true,
-                    path: 'branding/animation_check_mode.json' // the path to the animation json
+                    path: '../branding/animation_check_mode.json' // the path to the animation json
                 });
                 return
             default:
@@ -426,6 +426,12 @@ class WS {
                 case "FRL":
                     COM.feed_release(payload);
                     break
+                case "LGT":
+                    COM.toggle_lighting(payload);
+                    break
+                case "BTC":
+                    COM.change_batch(payload);
+                    break
             }
         };
 
@@ -706,8 +712,6 @@ class COM {
             fileName.classList.remove('has-text-grey-lighter');
             fileName.textContent = this.fileInput.files[0].name;
 
-            document.querySelector("#button_print").disabled = false
-
             // Send notification success
             bulmaToast.toast({
                 message: "Backend received GCODE successfully!",
@@ -731,6 +735,7 @@ class COM {
         }
     }
 
+    // Request machine status
     static get_current_status(data) {
         if (data == "FORCE") {
             WS.ws.send(COM.payloader("GCS"))
@@ -827,17 +832,19 @@ class COM {
         var div = document.querySelector("#primary\_settings\_column")
 
         var check_mode = div.querySelector("#switch_check_mode").checked
+        var scan_mode = div.querySelector("#switch_scan_mode").checked
         var radius = div.querySelector("#input_radius").value
         var length = div.querySelector("#input_length").value
         var batch = div.querySelector("#input_batch").value
 
-        var position_coarse = document.getElementById("input_batch_coarse").value
-        var position_fine = document.getElementById("input_batch_fine").value
+        var position_coarse = document.getElementById("input_position_coarse").value
+        var position_fine = document.getElementById("input_position_fine").value
         var offset = Number(position_coarse) + Number(position_fine)
 
         data = JSON.stringify(
             {
                 "check_mode": check_mode,
+                "scan_mode": scan_mode,
                 "radius": radius,
                 "length": length,
                 "batch": batch,
@@ -850,6 +857,28 @@ class COM {
 
         // Print
         WS.ws.send(COM.payloader("PRN"))
+    }
+
+    // Toggle lights
+    static toggle_lighting(data) {
+        // Send command
+        if (data == null) {
+            WS.ws.send(COM.payloader("LGT"))
+            return
+        }
+
+        if (data == "DONE") {
+            // Send notification success
+            bulmaToast.toast({
+                message: "Toggled lighting.",
+                type: "is-success",
+                position: "bottom-right",
+                dismissible: true,
+                closeOnClick: false,
+                duration: 4000,
+                animate: { in: "fadeInRight", out: "fadeOutRight" }
+            });
+        }
     }
 
     // --- GRBL communication ---
@@ -1092,10 +1121,38 @@ class COM {
                 duration: 4000,
                 animate: { in: "fadeInRight", out: "fadeOutRight" }
             });
+
+            // Enable control buttons
+            document.getElementById("button_lighting").disabled = false
+            document.getElementById("button_print").disabled = false
+            document.getElementById("input_batch").disabled = false
+            document.getElementById("input_position_coarse").disabled = false
+            document.getElementById("input_position_fine").disabled = false
         }
 
     }
 
+    // Change batch part
+    static change_batch(data) {
+        if (data == "DONE") {
+            // Send notification success
+            bulmaToast.toast({
+                message: "Batch move requested!",
+                type: "is-success",
+                position: "bottom-right",
+                dismissible: true,
+                closeOnClick: false,
+                duration: 4000,
+                animate: { in: "fadeInRight", out: "fadeOutRight" }
+            });
+            return
+        }
+
+        var part = document.getElementById("input_batch").value
+        WS.ws.send(COM.payloader("BTC", Number(part) - 1))
+    }
+
+    // Feed hold during run operation
     static feed_hold(data) {
         // Send command
         if (data == null) {
@@ -1117,6 +1174,7 @@ class COM {
         }
     }
 
+    // Feed release during run operation
     static feed_release(data) {
         // Send command
         if (data == null) {

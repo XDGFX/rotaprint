@@ -122,19 +122,69 @@
             <div class="box">
                 <!-- Primary Settings -->
                 <div>
-                    <div class="columns is-vcentered">
-                        <div class="column">
+                    <div class="columns">
+                        <div class="column" style="padding-right: 1.5rem;">
+                            <div class="is-divider" data-content="Machine Controls" style="margin-top: 0.5rem;"></div>
 
-                            <button class="button" id="button_home" onclick="COM.home()">Home</button>
+                            <div class="tile is-ancestor" style="height: 8em;margin-bottom: 32px;margin-top: -10px;">
+                                <div class="tile is-parent">
+                                    <button onclick="COM.home()"
+                                        class="tile is-child notification has-text-centered button is-light"
+                                        style="padding: 0; height: 100%;">
+                                        <div>
+                                            <i class="fas fa-2x fa-arrows-alt"></i>
+                                            <span class="heading">Home</span>
+                                        </div>
+                                    </button>
+
+                                </div>
+                                <div class="tile is-parent">
+                                    <button id="button_lighting" onclick="COM.toggle_lighting()"
+                                        class="tile is-child notification has-text-centered button is-light"
+                                        style="padding: 0; height: 100%;" autocomplete="off" disabled>
+                                        <div>
+                                            <i class="fas fa-2x fa-lightbulb"></i>
+                                            <span class="heading">Toggle Lighting</span>
+                                        </div>
+                                    </button>
+                                </div>
+                                <div class="tile is-parent">
+                                    <button id="button_print" onclick="COM.print_now()"
+                                        class="tile is-child notification has-text-centered button is-primary"
+                                        style="padding: 0; height: 100%;" autocomplete="off" disabled>
+                                        <div>
+                                            <i class="fas fa-2x fa-fill-drip"></i>
+                                            <span class="heading">Print</span>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">Move Batch</label>
+                                <p class="control is-expanded">
+                                    <input id="input_batch" class="slider is-fullwidth" step="1" min="0" max="5"
+                                        value="0" type="range" onchange="COM.change_batch()" autocomplete="off"
+                                        disabled>
+                                    <ul class="range-labels has-text-grey-light">
+                                        <li style="display:inline;">H</li>
+                                        <li style="display:inline;">1</li>
+                                        <li style="display:inline;">2</li>
+                                        <li style="display:inline;">3</li>
+                                        <li style="display:inline;">4</li>
+                                        <li style="display:inline;">5</li>
+                                    </ul>
+                                </p>
+                            </div>
 
                             <div class="columns">
                                 <div class="column">
                                     <div class="field">
                                         <label class="label">Align Y (Coarse)</label>
                                         <p class="control is-expanded">
-                                            <input id="input_batch_coarse" class="slider is-fullwidth" step="5" min="0"
-                                                max="360" value="0" type="range" oninput="COM.rotate_y()"
-                                                autocomplete="off">
+                                            <input id="input_position_coarse" class="slider is-fullwidth" step="5"
+                                                min="0" max="360" value="0" type="range" onchange="COM.rotate_y()"
+                                                autocomplete="off" disabled>
                                             <ul class="range-labels has-text-grey-light">
                                                 <li style="display:inline;">0</li>
                                                 <li style="display:inline;">180</li>
@@ -147,9 +197,9 @@
                                     <div class="field">
                                         <label class="label">Align Y (Fine)</label>
                                         <p class="control is-expanded">
-                                            <input id="input_batch_fine" class="slider is-fullwidth" step="0.1" min="-5"
-                                                max="5" value="0" type="range" oninput="COM.rotate_y()"
-                                                autocomplete="off">
+                                            <input id="input_position_fine" class="slider is-fullwidth" step="0.1"
+                                                min="-5" max="5" value="0" type="range" onchange="COM.rotate_y()"
+                                                autocomplete="off" disabled>
                                             <ul class="range-labels has-text-grey-light">
                                                 <li style="display:inline;">-5</li>
                                                 <li style="display:inline;">0</li>
@@ -159,18 +209,27 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <button class="button" id="button_print" onclick="COM.print_now()" autocomplete="off"
-                                disabled>Print</button>
-
                         </div>
-                        <div class="column" id="primary_settings_column">
-                            <div class="field">
-                                <label class="label">Check mode</label>
-                                <input id="switch_check_mode" type="checkbox" class="switch is-rounded">
-                                <label for="switch_check_mode"></label>
-                                <a
-                                    onclick="CG.show_help('modal_check_mode'), CG.modal_animation('animation_check_mode', 'show')">?</a>
+                        <div class="column" id="primary_settings_column" style="padding-left: 1.5rem;">
+                            <div class="is-divider" data-content="Run Settings" style="margin-top: 0.5rem;"></div>
+                            <div class=columns>
+                                <div class="column">
+                                    <div class="field">
+                                        <label class="label">Check mode</label>
+                                        <input id="switch_check_mode" type="checkbox" class="switch is-rounded">
+                                        <label for="switch_check_mode"></label>
+                                        <a
+                                            onclick="CG.show_help('modal_check_mode'), CG.modal_animation('animation_check_mode', 'show')">?</a>
+                                    </div>
+                                </div>
+                                <div class="column">
+                                    <div class="field">
+                                        <label class="label">Scan mode</label>
+                                        <input id="switch_scan_mode" type="checkbox" class="switch is-rounded"
+                                            checked="checked">
+                                        <label for="switch_scan_mode"></label>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="columns">
