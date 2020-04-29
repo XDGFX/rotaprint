@@ -7,16 +7,15 @@ Written by Hélène Verhaeghe
 
 # import the necessary packages
 # importing only compare_simm function/object within the whole libary
-from skimage.metrics import structural_similarity
-# import imutils
+from skimage.metrics import structural_similarity #import imutils
 import cv2
 import numpy as np
 import statistics
 
 #Update varaible based on machine configuration
-y = db.settings["video_device"] 
-w = db.settings["comparison_images"]
-qc = db.settings["qc_images"]
+#y = db.settings["video_device"] 
+#w = db.settings["comparison_images"]
+#qc = db.settings["qc_images"]
 
 
 def take_picture():
@@ -35,8 +34,6 @@ def split_image(image):
     B, G, R = cv2.split(image)
 
     return B, G, R
-
-
 
 def rotate_and_picture(y):  # y is the number of picture
 
@@ -69,9 +66,7 @@ def test_split(list_test):
 
     for image in list_test:
         imageB = cv2.imread(image) #[b,g,r]
-        #B = imageB[:, :, 0]
-        #G = imageB[:, :, 1]
-        #R = imageB[:, :, 2]
+        
                
         pictures_list.append(imageB)
     
