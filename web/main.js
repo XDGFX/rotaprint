@@ -432,6 +432,9 @@ class WS {
                 case "BTC":
                     COM.change_batch(payload);
                     break
+                case "QCO":
+                    COM.qc_override(payload);
+                    break
             }
         };
 
@@ -758,12 +761,25 @@ class COM {
 
             // Update alarm field
             var div = document.getElementById("status_alarm")
-            if (current_status["grbl_operation"] == "Alarm") {
+            if ((current_status["grbl_operation"] == "Alarm") || (current_status["grbl_operation"] == "Failed QC")) {
                 div.classList.remove("is-success")
                 div.classList.add("is-danger")
             } else {
                 div.classList.add("is-success")
                 div.classList.remove("is-danger")
+            }
+
+            // If QC has failed
+            if (current_status["grbl_operation"] == "Failed QC") {
+                bulmaToast.toast({
+                    message: "Quality check failed! <a href='COM.qc_override()'>Manual Override?</a>",
+                    type: "is-danger",
+                    position: "bottom-right",
+                    dismissible: true,
+                    closeOnClick: false,
+                    duration: 99999999,
+                    animate: { in: "fadeInRight", out: "fadeOutRight" }
+                });
             }
 
             // Enable 'Complete' button of run is finished
@@ -1186,6 +1202,28 @@ class COM {
             // Send notification success
             bulmaToast.toast({
                 message: "Continue request received",
+                type: "is-success",
+                position: "bottom-right",
+                dismissible: true,
+                closeOnClick: false,
+                duration: 4000,
+                animate: { in: "fadeInRight", out: "fadeOutRight" }
+            });
+        }
+    }
+
+    // Override QC error
+    static qc_override(data) {
+        // Send command
+        if (data == null) {
+            WS.ws.send(COM.payloader("QCO"))
+            return
+        }
+
+        if (data == "DONE") {
+            // Send notification success
+            bulmaToast.toast({
+                message: "Quality control check overridden",
                 type: "is-success",
                 position: "bottom-right",
                 dismissible: true,

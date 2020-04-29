@@ -58,6 +58,9 @@ class rotaprint:
     # Fraction of total print remaining (where 0 is complete, 1 is not started)
     remaining = 1
 
+    # Quality control override
+    qc_override = False
+
     status = {
         "time_elapsed": 0,
         "parts_complete": 0,
@@ -139,6 +142,7 @@ class rotaprint:
             time.sleep(1)
 
     def print_sequence(self):
+        log.info("Starting print sequence!")
         # Allow existing timers to end
         self.active = False
 
@@ -151,6 +155,7 @@ class rotaprint:
         r.pool.submit(self.timer)
 
         # Modify gcode as required for colour change and dimensions
+        log.info("Correcting GCODE dimensions")
         gc.correct()
 
         # Change check mode on grbl if required
@@ -168,11 +173,13 @@ class rotaprint:
             g.change_batch(self.batch_current, True)
 
             if r.scan_mode:
+                log.info(
+                    "Scan mode is enabled, performing initial alignment scan.")
                 # Setup WCS for correct scan start position
                 g.offset_y(self.offset)
 
                 # Scan for reference images
-                v.initial_scan()
+                v.initial_alignment_scan()
 
             self.batch_new_part()
 
@@ -181,29 +188,67 @@ class rotaprint:
     def batch_new_part(self):
         # If there are more parts to do
         if self.batch_current < self.batch:
+            log.info("Starting a new batch part")
+
             # Update parts complete status
             self.status["parts_complete"] = str(
                 self.batch_current) + " of " + str(self.batch)
 
-            if self.batch_current > 0:
+            # If not first part
+            if self.batch_current > 0 and r.scan_mode:
+                log.info("Scan mode is enabled, starting scan sequence")
+                # If QC is required
+                if not self.qc_override:
+                    log.info(
+                        "Scanning part for quality assurance...")
+
+                    # Go back to scanner
+                    g.change_batch(self.batch_current - 1, True)
+
+                    # Only one part has completed, no reference for comparison
+                    if self.batch_current == 1:
+                        v.initial_quality_scan()
+                    else:
+                        # Scan part for quality checking
+                        score = v.quality_scan()
+
+                        log.debug(f"Quality score :{score}")
+
+                        # If score received is lower than needed
+                        if score < db.settings["quality_score"]:
+                            r.status["grbl_operation"] == "Failed QC"
+                            log.error("Quality check failed!")
+
+                            return
+                        else:
+                            log.info("Quality check passed!")
+
+                else:
+                    # Reset QC override and continue as normal
+                    log.info("Quality check overridden. Continuing to next part")
+                    self.qc_override = False
+
                 # Go to scanner
                 g.change_batch(self.batch_current, True)
 
-                # # Scan part
-                if r.scan_mode:
-                    self.offset = v.scan()
+                log.info("Scanning part for alignment...")
 
-            # Setup WCS for correct print start position
-            g.offset_y(self.offset)
+                # Scan part for alignment
+                self.offset = v.alignment_scan()
+
+                log.debug(f"Alignment offset: {self.offset}")
+
+                # Setup WCS for correct print start position
+                g.offset_y(self.offset)
 
             # Go to printer
             g.change_batch(self.batch_current)
 
             # Send gcode
             g.send(gc.gcode, batch=True)
-            # self.pool.submit(g.send, data=gc.gcode)
 
         elif self.batch_current == self.batch:
+            log.info("All parts complete!")
             # Update parts complete status
             self.status["parts_complete"] = str(
                 self.batch_current) + " of " + str(self.batch)
@@ -380,6 +425,7 @@ class database:
         "batch_origin": 110,
         "batch_offset": 100,
         "scanner_offset": 50,
+        "quality_score": 0.5,
 
         # --- Colour settings ---
         "colour_origin": 10,
@@ -653,6 +699,12 @@ class websocket:
             g.s.write("~".encode())
             return "DONE"
 
+        def quality_control_override(self, payload):
+            log.warning("Quality control check overridden!")
+            r.qc_override = True
+            r.batch_new_part
+            return "DONE"
+
         switcher = {
             "SET": print_settings,
             "DBS": database_set,
@@ -670,6 +722,7 @@ class websocket:
             "BTC": change_batch,
             "FHD": feed_hold,
             "FRL": feed_release,
+            "QCO": quality_control_override,
         }
 
         # Separate JSON string into command and payload

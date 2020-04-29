@@ -87,6 +87,14 @@
             "help": "Distance between printhead and scanner in batch axis."
         },
         {
+            "title": "Quality score threshold",
+            "id": "quality_score",
+            "unit": "mm",
+            "advanced": true,
+            "category": "batch",
+            "help": "Minimum similarity score required after quality check before continuing with new part, where 1 is identical, and 0 is completely different."
+        },
+        {
             "title": "Colour Origin",
             "id": "colour_origin",
             "unit": "°",
