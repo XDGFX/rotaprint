@@ -13,24 +13,20 @@ import cv2
 import numpy as np
 import statistics
 
-
-#def control_system(status):
-
-
-## turn on/off the laser,camera and lighting
-#if status:
-#    # do something to turn the system on
-#    else:
-#        # do something to turn the system off
+#Update varaible based on machine configuration
+y = db.settings["video_device"] 
+w = db.settings["comparison_images"]
+qc = db.settings["qc_images"]
 
 
-#def take_picture(temp_file_path):
-# take a picture with camera
-# Return the data
+def take_picture():
+    #take a picture with camera
+    #Return the data
 
-#picture_data = cv2.imread(temp_file_path)
-
-#return picture_data
+    cap = cv2.VideoCapture(db.settings["video_device"]) # video capture source camera (webcam choice in interface) 
+    _,picture_data = cap.read() # return a single frame in variable `frame`
+    
+    return picture_data
 
 
 def split_image(image):
@@ -38,19 +34,8 @@ def split_image(image):
     # return the 3 outputs
     B, G, R = cv2.split(image)
 
-    # output["R"] = R
-    # output["G"] = G
-    # output["B"] = B
-
     return B, G, R
 
-# for channel in ["R", "G", "B"]:
-    # print(picture_data[channel])
-
-
-def goto_angle(degrees):
-    pass
-# rotates the part degrees
 
 
 def rotate_and_picture(y):  # y is the number of picture
@@ -63,7 +48,7 @@ def rotate_and_picture(y):  # y is the number of picture
     # if y=8: x=[0,45,90,135,180,225,270,315] - will need to return to 0/360 position
     for x in range(0, y):
         angle = 360/y*x
-        goto_angle(angle)
+        g.send([angle], True) # where % is the angle in degrees you want the part to go to
         picture = take_picture(picture)
         B, G, R = cv2.split(picture)
 
@@ -73,22 +58,22 @@ def rotate_and_picture(y):  # y is the number of picture
         # index - [0,1,2,3,4,5,6,7]
 
 
-    goto_angle(angle_step)
+    g.send([angle_step], True) # where % is the angle in degrees you want the part to go to
 
     return angle_step, pictures_list
 
 
 def test_split(list_test):
 
-    pictures_list = np.empty((0,3), int)
+    pictures_list = []
 
     for image in list_test:
         imageB = cv2.imread(image) #[b,g,r]
-        B, G, R = cv2.split(imageB)
-        #B = imageB[:,0,0]
-        #G = imageB[0,:,0]
-        #R = imageB[0,0,:]
-        pictures_list = np.append(pictures_list, np.array([[R,G,B]]), axis=0)
+        #B = imageB[:, :, 0]
+        #G = imageB[:, :, 1]
+        #R = imageB[:, :, 2]
+               
+        pictures_list.append(imageB)
     
     return pictures_list
 
@@ -96,32 +81,38 @@ def test_split(list_test):
 """Initial Alignement"""
 
 # light up laser
-"""control_system(True)"""
+## g.toggle_lighting(True)  # Turns lights on
+
+
+#g.change_batch(0) # Move component 0 under print head
+#g.change_batch(0, True) # Move component 0 under scanner
+#g.change_batch(1) # Move component 1 under print head
+#g.change_batch(1, True) # Move component 1 under scanner
 
 
 # here parts is being moved linearly to FOV of sensing position
 # engineer manaually align the part to desired starting position in reference to laser.
 
 # Record the y number of images of reference and store image data
-"""angle_step_y, reference_image = rotate_and_picture(y)  # y to be chosen"""
+"""angle_step_y, ref_image = rotate_and_picture(y)  # y to be chosen"""
 
 
 """Alignement of batch"""
 
 # import dummy pictures for testing code
-y = 4
-ref_images = ["vision/img1.jpg", "vision/img4.jpg", "vision/img8.jpg", "vision/img10.jpg"]
+y = 4  # Reference
+ref_images_upload = ["vision/img1.jpg", "vision/img4.jpg", "vision/img7.jpg", "vision/img10.jpg"]
 angle_step_y = 360/y
 
-reference_images = test_split(ref_images)
+ref_images = test_split(ref_images_upload)
 
 # test5
-w = 14
-com_images = ["vision/img1.jpg", "vision/img2.jpg", "vision/img3.jpg", "vision/img4.jpg", "vision/img5.jpg", "vision/img6.jpg", "vision/img7.jpg", "vision/img8.jpg", "vision/img9.jpg", "vision/img10.jpg", "vision/img11.jpg", "vision/img12.jpg", "vision/img13.jpg", "vision/img14.jpg"]
+w = 14  # Comparison
+com_images_upload = ["vision/img1.jpg", "vision/img2.jpg", "vision/img3.jpg", "vision/img4.jpg", "vision/img5.jpg", "vision/img6.jpg", "vision/img7.jpg", "vision/img8.jpg", "vision/img9.jpg", "vision/img10.jpg", "vision/img11.jpg", "vision/img12.jpg", "vision/img13.jpg", "vision/img14.jpg"]
 angle_step_w = 360/w
 
 
-comparison_images = test_split(com_images)
+com_images = test_split(com_images_upload)
 
 
 # next part is moved linearly to sensing position
@@ -129,76 +120,160 @@ comparison_images = test_split(com_images)
 # record w number of inspection image to be compared with reference images
 
 # w to be chosen for accuracy
-"""angle_step_w, comparison_images = rotate_and_picture(w)"""
+"""angle_step_w, com_images = rotate_and_picture(w)"""
 
-# compare the x number of images to the w compariosn images - as a set of y
-score_list_R = []
-score_list_G = []
-score_list_B = []
+# initialise the lists
+scores_per_sets = [] #
+temp_score = []
+score_set = []
 
-ideal_step = angle_step_y / angle_step_w
+# Step size for W wrt Y
+ideal_step = w / y
+
+# Increment start comparison image
+for start in range(w):
+
+    # Determine y number of comparison images to test against the reference images
+    # round j to nearest integer
+    for j, i  in zip(np.arange(start, start + w, ideal_step,int), range(y)): 
+
+        # If image index is greater than the number of images, 'wrap around' to the start
+        if j >= w:
+            j = j - w
+                
+        for c in range(3):
+            #loop over R,G,B pixels
+            (score, _) = structural_similarity(ref_images[i][:, :, c], com_images[j][:, :, c], full=True)
+
+            temp_score.append(score)
+
+        # average the R,G,B scores of that comparison and assign to one list 
+        temp_score_avg= statistics.mean (temp_score) 
+        score_set.append(temp_score_avg)
+        temp_score.clear() 
+    score_set_avg = statistics.mean (score_set)
+    scores_per_sets.append (score_set_avg)
+    score_set.clear()
+
+       
+
+# find the highest score of all y sets
+# return the index
+maxi = scores_per_sets.index(max(scores_per_sets))
+
+print("Most similar set:" + com_images[maxi])
+
+# the index indicate the image hence the rotation
+##g.send([angle_step_w*maxi], True) # where % is the angle in degrees you want the part to go to
 
 
-# 1st loop for red
-for j in range(0, w):
-    for i in range(0, y):
-        score_list = []
-        # compute only R values - 1st column
-        com_R = comparison_images[:, 0]
-        ref_R = reference_images[:, 0]
-        # find the index that is the closest to the desired angle by rounding it to the nearest image - index
-        actual_index = round(ideal_step * i)
-        # compute the Stuctural Similarity Indey (SSIM) - score - every x times
-        (scoreR, _) = structural_similarity(ref_R[i], com_R[::actual_index], full=True)
-
-        score_list.append(scoreR)
-        score_list_R = np.mean(score_list)
 
 
 
 
-# 2nd loop for Green
-for j in range(0, w):
-    for i in range(0, y):
-        score_list = []
-        # compute only G values - 2nd column
-        com_G = comparison_images[:, 1]
-        ref_G = reference_images[:, 1]
-        # find the index that is the closest to the desired angle by rounding it to the nearest image - index
-        actual_index = round(ideal_step * i)
-        # compute the Stuctural Similarity Indey (SSIM) - score - every x times
-        (scoreG, _) = structural_similarity(ref_G[i], com_G[::actual_index], full=True)
-
-        score_list.append(scoreG)
-        score_list_G = np.mean(score_list)
 
 
-# 3rd loop for Blue
-for j in range(0, w):
-    for i in range(0, y):
-        score_list = []
-        # compute only R values - 1st column
-        com_B = comparison_images[:, 2]
-        ref_B = reference_images[:, 2]
-        # find the index that is the closest to the desired angle by rounding it to the nearest image - index
-        actual_index = round(ideal_step * i)
-        # compute the Stuctural Similarity Indey (SSIM) - score - every x times
-        (scoreB, _) = structural_similarity(ref_B[i], com_B[::actual_index], full=True)
 
-        score_list.append(scoreB)
-        score_list_B = np.mean(score_list)
 
+################################################
+# Increment start test image
+#for start in range(w):
+
+    ## Determine y images to test against the reference images
+    #for i in range(y):
+       # j = round(ideal_step * y)
+
+        #(scoreB, _) = structural_similarity(
+      #      ref_images[i][:, :, 0], com_images[j][:, :, 0], full=True)
+#
+      #  temp_score.append(scoreB)
+      #  score_list_B.append
+
+        # for j in np.arange(start, start + w, ideal_step):
+        # If value is greater than the number of images, 'wrap around' to the start
+       # if j > w:
+       #     j = j - w
+
+        # Round to nearest integer
+       # j = round(j)
+
+       # for c in range [:,:,3]
         
-score_list_RGB = np.column_stack((score_list_R, score_list_G, score_list_B))
+
+
+       # # Loop over reference images
+       # for i in range(y):
+
+       #     score_list_B.append(scoreB)
+
+##################################
+
+
+
+
+# j = [0, 3.5, 7, 10.5]
+# j = [1, 4.5, 8, 11.5]
+# j = [0, 1, 2, 3, 4]
+
+# for start in range(0, w):
+#     print(range(start, start + w, ideal_step))
+
+# # 1st loop for Blue
+#     for j in range(start, start + w, ideal_step):
+
+#         print(j)
+
+#         for i in range(start, y):
+            
+#             # compute only B values - 1st column
+#             #com_B = comparison_images[:,:, 0]
+#             #ref_B = reference_images[:,:, 0]
+#             # find the index that is the closest to the desired angle by rounding it to the nearest image - index
+#             actual_index = round(ideal_step * j)
+#             # compute the Stuctural Similarity Indey (SSIM) - score - every x times
+#             #(scoreB, _) = structural_similarity(ref_images[i][:,:,0], com_images[::actual_index][:,:,0], full=True)
+#             (scoreB, _ )= structural_similarity(ref_images[i][:,:,0], com_images[actual_index][:,:,0], full=True)
+
+#             score_list_B.append(scoreB)
+            
+
+
+  #  # 2nd loop for Green
+   # for j in range(start, ideal_step):
+   #     for i in range(start, y):
+  #          
+  #          # compute only G values - 2nd column
+            # find the index that is the closest to the desired angle by rounding it to the nearest image - index
+  #          actual_index = round(ideal_step * j)
+            # compute the Stuctural Similarity Indey (SSIM) - score - every x times
+   #         (scoreG, _) = structural_similarity(ref_images[i][:,:,1], com_images[actual_index][:,:,1], full=True)
+
+  #          score_list_G.append(scoreG)
+            
+
+    # 3rd loop for red
+  #  for j in range(start, ideal_step):
+   #     for i in range(start, y):
+            
+            # compute only R values - 3rd column
+            # find the index that is the closest to the desired angle by rounding it to the nearest image - index
+            #actual_index = round(ideal_step * j)
+            # compute the Stuctural Similarity Indey (SSIM) - score - every x times
+           # (scoreR, _) = structural_similarity(ref_images[i][:,:,2], com_images[actual_index][:,:,2], full=True)
+
+           # score_list_R.append(scoreR)
+        
+   # score_list_RGB = np.column_stack((score_list_R, score_list_G, score_list_B))
 
 # average the scores from R,G,B
-score_list_avg = np.mean (score_list_RGB, axis=1)
+#score_list_avg = np.mean (score_list_RGB, axis=1)
 
 # find the highest score
 # return the index
-i = score_list_avg.index(max(score_list_avg))
+#maxi = score_list_avg.index(max(score_list_avg))
 
 # print("Most similar image:" + comparison_list[i])
 
 # the index indicate the image hence the rotation
-goto_angle(angle_step_w*i)
+#goto_angle(angle_step_w*maxi)
+
