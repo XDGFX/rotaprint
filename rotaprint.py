@@ -26,6 +26,9 @@ import io
 import sys
 import traceback
 import math
+from skimage.metrics import structural_similarity
+import cv2
+import numpy as np
 from json import dumps, loads
 
 
@@ -802,7 +805,6 @@ class grbl:
         try:
             # Connect to serial
             log.debug(f"Connecting on port {self.port}...")
-            # self.s = serial.Serial(self.port, 115200, timeout=1)
             self.s = serial.Serial(self.port, 115200, timeout=10)
 
             log.info("Connection success!")
