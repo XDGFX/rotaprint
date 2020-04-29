@@ -87,7 +87,39 @@
             "help": "Distance between printhead and scanner in batch axis."
         },
         {
-            "title": "Quality score threshold",
+            "title": "Video Device",
+            "id": "video_device",
+            "unit": "int",
+            "advanced": true,
+            "category": "batch",
+            "help": "Index for the video device used for alignment and quality assurance scanning."
+        },
+        {
+            "title": "Reference Images",
+            "id": "reference_images",
+            "unit": "int",
+            "advanced": true,
+            "category": "batch",
+            "help": "Number of reference images to take during alignment process. More images will be slower, but more accurate."
+        },
+        {
+            "title": "Comparison Images",
+            "id": "comparison_images",
+            "unit": "int",
+            "advanced": true,
+            "category": "batch",
+            "help": "Number of comparison images to compare with reference images during alignment process. Should be several times more than reference images for highest accuracy."
+        },
+        {
+            "title": "Quality Control Images",
+            "id": "qc_images",
+            "unit": "int",
+            "advanced": true,
+            "category": "batch",
+            "help": "Number of images to take of the part during quality checks. More images is less likely to produce a false positive, but it's slower."
+        },
+        {
+            "title": "Quality Score Threshold",
             "id": "quality_score",
             "unit": "mm",
             "advanced": true,

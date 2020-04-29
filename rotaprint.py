@@ -425,6 +425,10 @@ class database:
         "batch_origin": 110,
         "batch_offset": 100,
         "scanner_offset": 50,
+        "video_device": 0,
+        "reference_images": 4,
+        "comparison_images": 20,
+        "qc_images": 8,
         "quality_score": 0.5,
 
         # --- Colour settings ---
