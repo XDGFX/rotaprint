@@ -4,7 +4,8 @@ Copyright (c) 2020
 This file is part of the TDCA rotary printer project.
 
 Main script for running the TDCA rotary printer.
-Written by Callum Morrison <callum.morrison@mac.com>, 2020
+Written by Callum Morrison <callum.morrison@mac.com>
+           and Hélène Verhaeghe <hv236@bath.ac.uk>, 2020
 
 Unauthorized copying of this file, via any medium is strictly prohibited
 Proprietary and confidential
@@ -165,19 +166,24 @@ class rotaprint:
         if self.check_mode != g.check:
             g.check_mode()
 
+        # Start batch at part 0
+        self.batch_current = 0
+
         # If check mode is enabled
         if self.check_mode:
+            # Setup batch size of 1
             self.batch = 1
-            self.batch_current = 0
+
             # Send gcode once
             self.batch_new_part()
         else:
-            self.batch_current = 0
-            g.change_batch(self.batch_current, True)
-
             if r.scan_mode:
+                # Move first part under camera for initial alignment
+                g.change_batch(self.batch_current, True)
+
                 log.info(
                     "Scan mode is enabled, performing initial alignment scan.")
+
                 # Setup WCS for correct scan start position
                 g.offset_y(self.offset)
 
@@ -760,8 +766,177 @@ class websocket:
 
 
 class vision:
-    def scan(self):
+    def connect(self):
+        log.debug("Activating the desired camera...")
+        self.cap = cv2.VideoCapture(db.settings["video_device"])
+
+        # Check if camera opened successfully
+        if (cap.isOpened() == False):
+            log.error(
+                "Error opening video stream! Attempted use of vision system will fail!")
+        else:
+            log.info("Camera connected!")
+
+    def take_picture(self):
+        # Return a single frame in variable `picture_data`
+        # picture_data is an image array vector
+        _, picture_data = self.cap.read()
+
+        return picture_data
+
+    def rotate_and_picture(self, n):
+        # Takes n pictures around the part, always starting at y = 0
+
+        log.info(f"Taking {n} picture(s) of the current part...")
+
+        if n == 0:
+            log.error("The number of pictures specified must be above zero!")
+            return
+
+        # Initialise variables
+        pictures_list = []
+        angle_step = 360 / n
+
+        # Go to start rotation angle
+        g.send(["G0Y0"], settings_mode=True)
+
+        y_acceleration = db.settings["$121"]  # Acceleration in deg / s^2
+        y_max_speed = db.settings["$111"] / 60  # Max speed in deg / s
+
+        # The distance at which the triangle velocity graph becomes a trapesium
+        s_limit = 2 * y_max_speed ^ 2 / y_acceleration
+
+        # Wait for machine to reach position before taking pictures
+        # Calculate time delay for worst case initial align
+        if s_limit > 180:
+            # Triangle profile
+            delay = 2 * (180 / y_acceleration) ^ 0.5
+        else:
+            # Trapesium profile
+            delay = 2 * (s_limit / y_acceleration) ^ 0.5 + \
+                (180 - s_limit) / y_max_speed
+
+        # Wait for delay with 1s buffer time
+        time.sleep(delay + 1)
+
+        # Calculate time delay required between images to ensure machine has stopped moving
+        if s_limit > angle_step:
+            # Triangle profile
+            delay = 2 * (angle_step / y_acceleration) ^ 0.5
+        else:
+            # Trapesium profile
+            delay = 2 * (s_limit / y_acceleration) ^ 0.5 + \
+                (angle_step - s_limit) / y_max_speed
+
+        for x in range(n):
+            # Angle is the degrees you want the part to go to
+            angle = angle_step * x
+
+            # Convert requested angle to GCODE command
+            gcode = "G0Y" + str(angle)
+
+            # Send command to firmware
+            g.send([gcode], settings_mode=True)
+
+            # Wait for machine to reach position
+            time.sleep(delay)
+
+            # Extract data from image taken
+            picture_data = take_picture()
+
+            # Record data in a list
+            pictures_list.append(picture_data)
+
+        log.info(f"{n} picture(s) were sucessfully taken ")
+
+        return angle_step, pictures_list  # TODO is angle_step needed elsewhere?
+
+    def initial_alignment_scan(self):
+        # Turn on lighting
+        g.toggle_lighting(True)
+
+        # Store alignment images into variable (starting at y = 0)
+        self.angle_step_r, self.ref_image = self.rotate_and_picture(r)
+
+        # Turn off lighting
+        g.toggle_lighting(True)
+
+    def initial_quality_scan(self):
+        # Turn on lighting
+        g.toggle_lighting(True)
+
+        # Store quality images into variable (starting at y = 0)
+        self.angle_step_r, self.quality_images = self.rotate_and_picture(r)
+
+        # Turn off lighting
+        g.toggle_lighting(True)
+
+    def alignment_scan(self):
+        # run scan with alignment reference images and n = number of comparison scan images
         pass
+
+    def quality_scan(self):
+        # run scan with quality reference images and n = number of quality scan image
+        pass
+
+    def scan(self, reference_images, n):
+        # Where reference_images are the images to compare against, and n is the number of new images to take
+
+        # Turn on lighting
+        g.toggle_lighting(True)
+
+        # record "c" number of comparison images (to be compared against reference image as set of "r")
+        angle_step_c, com_images = rotate_and_picture(c)
+
+        # Initialisation of lists
+        temp_score = []  # temporary list to use within loop to collect SSIM scores of a comparison for each colour
+        score_set = []  # list the scores of each comparison within a set
+        scores_per_sets = []  # Main list: list of the averages scores of each set
+
+        # compute the ideal step size to compare
+        ideal_step = c / r
+
+        for start in range(c):
+            # Increment start comparison image
+
+            for j, i in zip(np.arange(start, start + c, ideal_step, int), range(r)):
+                # Compare the comparison image against its supposedly correct the reference images (in terms of angle)
+                # Check the score of similarity between those two images
+                # round j to nearest integer
+
+                # If image index is greater than the number of images, 'wrap around' to the start - keeping the given angle step
+                if j >= c:
+                    j = j - c
+
+                for colour in range(3):
+                    # loop over B,G,R pixels - in that order
+                    (score, _) = structural_similarity(
+                        ref_images[i][:, :, colour], com_images[j][:, :, colour], full=True)
+
+                    temp_score.append(score)
+
+                # average the three colours scores for the given comparison
+                temp_score_avg = statistics.mean(temp_score)
+                # store that averaged score in score_set list
+                score_set.append(temp_score_avg)
+                temp_score.clear()  # clear list for next comparison
+
+            # after a set, average all scores of set
+            score_set_avg = statistics.mean(score_set)
+            # store that average set score in the main list
+            scores_per_sets.append(score_set_avg)
+            score_set.clear()  # clear list for next set
+
+        # find the highest score of all "c" sets
+        # return the index
+        maxi = scores_per_sets.index(max(scores_per_sets))
+
+        # the index indicates the offset angle to align part to desired priting position
+        # where % is the angle in degrees you want the part to go to
+        g.send([angle_step_w*maxi], True)
+
+        # Turn off lighting
+        g.toggle_lighting(True)
 
 
 class grbl:
@@ -1208,6 +1383,7 @@ if __name__ == "__main__":
 
     # Connect vision class
     v = vision()
+    v.connect()
 
     # Set up monitoring thread
     g.monitor()
