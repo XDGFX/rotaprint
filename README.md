@@ -83,8 +83,7 @@ Any computer can be used to setup the firmware, it does **not** have to be the s
 2. Extract the contents of the .zip file to somewhere safe, like your Desktop.
 
     ![manual/Image 0.png](manual/Image%200.png)
-
-    Contents of extracted grbl source code
+    <br>*Contents of extracted grbl source code*
 
 3. Download and install the latest Arduino IDE from the [Arduino website](https://www.arduino.cc/en/Main/Software).
 
@@ -178,20 +177,17 @@ http://[host-ip]:8080/web/  # When accessing from a different computer
 You should be presented with the following UI.
 
 ![manual/Image%201.png](manual/Image%201.png)
-
-If the UI does not look like this, ensure you followed the installation instructions correctly! If you can't access any UI, ensure the IP address you are using is correct, and that it has not changed.
+<br>*If the UI does not look like this, ensure you followed the installation instructions correctly! If you can't access any UI, ensure the IP address you are using is correct, and that it has not changed.*
 
 Access the machine settings by clicking on the gears in the top right.
 
 ![manual/Image%202.png](manual/Image%202.png)
-
-Machine settings screen on a new rotaprint installation
+<br>*Machine settings screen on a new rotaprint installation*
 
 The left panel contains quick-links to various categories. The `Apply Settings` button will display the number of settings you've changed from their defaults. It is recommended to enable `Advanced Settings` for this initial setup process, allowing full control over all parameters.
 
 ![manual/Image%203.png](manual/Image%203.png)
-
-Settings menu
+<br>*Settings menu*
 
 The settings are grouped as follows:
 
@@ -222,18 +218,15 @@ The settings are grouped as follows:
 Each setting has a short description below it, used to help identify what it does. Each setting indicates the expected unit or type of input. A `Default` button will reset that setting to it's factory value.
 
 ![manual/Image%204.png](manual/Image%204.png)
-
-An example machine setting
+<br>*An example machine setting*
 
 When you change a setting from what is currently stored in the database, it will highlight in yellow, indicating the change, and the `Apply Settings` button will update to indicate how many settings have been altered.
 
 ![manual/Image%205.png](manual/Image%205.png)
-
-An example machine setting after changing the value
+<br>*An example machine setting after changing the value*
 
 ![manual/Image%206.png](manual/Image%206.png)
-
-Apply Settings button reflecting the number of changes made
+<br>*Apply Settings button reflecting the number of changes made*
 
 Once you have made changes, click on `Apply # Settings`. A confirmation screen will present you with the changes you have made. Check this, and once happy click `Save Changes`.
 
@@ -252,8 +245,7 @@ rotaprint   : DEBUG    [MSG:'$H'|'$X' to unlock]
 Once the startup sequence is complete, upon reconnection to the web-interface, you should receive a success notification as shown below:
 
 ![manual/Image%207.png](manual/Image%207.png)
-
-Toast notification showing the printer has successfully connected
+<br>*Toast notification showing the printer has successfully connected*
 
 Spend time working through each setting, understanding what it means, and setting an accurate value. You can always change these at a later stage. 
 
@@ -326,8 +318,7 @@ http://[host-ip]:8080/web/  # When accessing from a different computer
 Only one user can access the rotaprint UI at a time. If you attempt to connect while another user has the UI open you will be denied access. This can also happen if you try to connect in more than one tab.
 
 ![manual/Image%208.png](manual/Image%208.png)
-
-Access to the UI is denied if someone else already has the UI open elsewhere.
+<br>*Access to the UI is denied if someone else already has the UI open elsewhere.*
 
 ## Home
 
@@ -361,8 +352,7 @@ Sample GCODE files have been provided under the `sample_files` folder, specifica
 Used to control the machine prior to printing. The first step is always to home the machine, allowing the firmware to zero all axes. The Y axis is infinite, and so the Arduino is wired to believe the Y axis limit pin is always triggered.
 
 ![manual/Image%209.png](manual/Image%209.png)
-
-Machine control buttons
+<br>*Machine control buttons*
 
 This may cause issues if  `Hard Limits` are enabled in the settings, as it will prevent the axis from turning. Alternative solutions could include wiring the limit pin to a physical switch which is triggered manually during homing, or re-compiling grbl with the limit-checking code removed for this axis.
 
@@ -449,18 +439,15 @@ Button to access the machine settings page, and update or change machine setting
 Toast notifications appear in the bottom right of the screen to notify the user of success or failure of specific actions.
 
 ![manual/Image%2010.png](manual/Image%2010.png)
-
-Error message displayed when printer could not connect
+<br>*Error message displayed when printer could not connect*
 
 ![manual/Image%2011.png](manual/Image%2011.png)
-
-At any point, the logs can be viewed by clicking on the logs icon on the right of the screen.
+<br>*At any point, the logs can be viewed by clicking on the logs icon on the right of the screen.*
 
 The logs will always display additional information about the current process. Log messages are colour coded based on the information they display. It is recommended to frequently check the logs when performing actions, to ensure they have completed as expected.
 
 ![manual/Image%2012.png](manual/Image%2012.png)
-
-Example messages of different log levels, colour coded based on the information they display
+<br>*Example messages of different log levels, colour coded based on the information they display*
 
 Some debug messages are of the following format:
 
@@ -498,8 +485,7 @@ The plugin was tested to work with Adobe Illustrator 24.0.1 (2020)
     - If you want to print text, you must first convert it to a shape; right click on the text and select `Create Outlines`
 
         ![manual/Image%2013.png](manual/Image%2013.png)
-
-        Converting text to vector outlines in Adobe Illustrator
+        <br>*Converting text to vector outlines in Adobe Illustrator*
 
     - Use of clipping masks will often cause the conversion to fail. Remove all clipping masks from the design before attempting to convert.
 
@@ -514,28 +500,24 @@ The plugin was tested to work with Adobe Illustrator 24.0.1 (2020)
         **#0000FF** - Colour D
 
         ![manual/Image%2014.png](manual/Image%2014.png)
-
-        These colours are **not** representative of the final print colour, they are just indicators to change to a specific pen during printing!
+        <br>*These colours are **not** representative of the final print colour, they are just indicators to change to a specific pen during printing!*
 
     - If you want to print a raster image, you may be able to use Illustrator's Image Trace function. Select your image and then find it under `Object` > `Image Trace` > `Make and Expand`.
 
         ![manual/Image%2015.png](manual/Image%2015.png)
-
-        Left: input raster image. Right: output vector image after using the Image Trace function.
+        <br>*Left: input raster image. Right: output vector image after using the Image Trace function.*
 
     - To 'fill' a shape with block colour, the recommended method is to use Illustrator's `Offset Path` function. The offset value should be smaller for higher density colour.
 
         ![manual/Image%2016.png](manual/Image%2016.png)
-
-        Offsetting a path to emulate printing of block colour
+        <br>*Offsetting a path to emulate printing of block colour*
 
 3. Once you are happy with the image, open the gcode conversion panel under `File` > `Scripts` > `Export to G-code V5`.
 
 4. The print settings should be as shown below. The output gcode will save to the file set under `Output File`. You can load these default settings, using the provided file `sample_files/gcode_panel_v5.settings`. Feed rate can be set if required, however it is recommended to keep this high.
 
     ![manual/Image%2017.png](manual/Image%2017.png)
-
-    Overview of the gcode conversion panel
+    <br>*Overview of the gcode conversion panel*
 
     For reference, the commands **G0Z0** lifts the pen from the paper, **G0Z1** applies the pen to the paper, and **<C#>** is a custom command which switches pen colours.
 
@@ -562,8 +544,7 @@ The plugin was tested to work with Adobe Illustrator 24.0.1 (2020)
 Once a print job has successfully begun, the connected user will be redirected to the *Monitor* page. At this point, the back-end is controlling the program flow, and so the user can close and re-open the rotaprint window as required.
 
 ![manual/Image%2018.png](manual/Image%2018.png)
-
-The rotaprint monitoring page
+<br>*The rotaprint monitoring page*
 
 This page is designed to provide the user with in-depth information about the current state of the machine. It is split into tiles, grouped by similarity.
 
@@ -590,20 +571,17 @@ This quickstart guide is intended to give you a brief overview of the functional
     - The four colour options are **#000000**, **#FF0000**, **#00FF00**, and **#0000FF**
 
     ![manual/Image%2019.png](manual/Image%2019.png)
-
-    Sample print file open in Adobe Illustrator
+    <br>*Sample print file open in Adobe Illustrator*
 
 2. Use the illustrator to GCODE panel to export your design, using the pre-supplied settings.
 
     ![manual/Image%2017.png](manual/Image%2017.png)
-
-    Overview of the gcode conversion panel
+    <br>*Overview of the gcode conversion panel*
 
 3. Connect to rotaprint using a web-browser. Upload your GCODE file using the UI.
 
     ![manual/Image%201.png](manual/Image%201.png)
-
-    The rotaprint home page UI
+    <br>*The rotaprint home page UI*
 
 4. Turn on the lights and alignment laser, and align the rotation of the part to the start of your print.
 
@@ -612,7 +590,6 @@ This quickstart guide is intended to give you a brief overview of the functional
 6. Press `Print`. You can monitor the printer from the following page.
 
     ![manual/Image%2018.png](manual/Image%2018.png)
-
-    The rotaprint monitoring page
+    <br>*The rotaprint monitoring page*
 
 7. Once the batch is complete, or if the printer detects an issue during quality inspection, this will be highlighted on the monitoring screen.
