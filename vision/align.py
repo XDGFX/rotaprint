@@ -11,7 +11,7 @@ qc = db.settings["qc_images"]  #number of comparison images for quality check sp
 camera_port = db.settings["video_device"] #device index  to specify which camera to use
 
 OUTPUTS:
-offset angle value
+maxi = offset angle value
 
 TERMS USED:
 "score" is refering to the Similarity score obtained after computing OpenCV "structural_similarity" function.
@@ -28,58 +28,54 @@ import statistics
 r = db.settings["reference_images"] #number of reference images specified (default:4)
 c = db.settings["comparison_images"] #number of comparison images specified (default:20)
 qc = db.settings["qc_images"]  #number of comparison images for quality check specified (default:8)
-camera_port = db.settings["video_device"] #device index  to specify which camera to use
 
 
-def take_picture(camera_port): ################variable???
+
+def take_picture(): 
     #Open webcam wanted
     #Take a picture 
     #Return the picture data
-    #Release the video capture object
+   
      
     log.debug("Activating the desired camera..." ) 
 
-    cap = cv2.VideoCapture(camera) #activate the webcam of choice (0 usually is the default camera)
+    cap = cv2.VideoCapture(db.settings["video_device"]) #activate the webcam of choice (0 usually is the default camera)
     
     #Check if camera opened successfully
     if (cap.isOpened()== False):
-        log.error("Error opening video stream or file"))
+        log.error("Error opening video stream or file,")
      
-    log.info("Camera successfully activated")
+    log.info("Camera successfully activated,")
 
     _ , picture_data = cap.read() # return a single frame in variable `picture_data` 
     #ret is a boolean variable that returns true if the frame is available.
     #picture_data is an image array vector captured based on the default frames per second defined explicitly or implicitly
        
-    # Default resolutions of the frame are obtained.The default resolutions are system dependent.
-    # We convert the resolutions from float to integer.
-    picture_width = int(cap.get(3))
-    picture_height = int(cap.get(4))
 
-    # When everything done, release the video capture object
-    cap.release()
+
 
     return picture_data 
 
-def rotate_and_picture(pictures_total):
+def rotate_and_picture(n):
     # Rotate the part at desired angle steps
     # Take a picture at each rotation
     # return pictures data in a list 
     log.warning("Taking more than 360 pictures may slow down the image processing.")
-    log.info("Rotating and taking a picture at each rotation until {pictures_total} pictures taken.")
+    log.info(f"Rotating and taking a picture at each rotation until {n} pictures taken.")
     
-    if picture_total = 0
+    if n == 0:
+        #if the desired number of pictures was set as zero, alert the user.
         log.error("The number of pictures specified must be above zero!")
-        break##########################################################################################£!!!!!
+        return
 
     #pictures_list = np.empty((0,3), int)
     pictures_list = []
-    angle_step = 360/pictures_total
+    angle_step = 360 / n
 
-    for x in range(pictures_total):
-        angle = angle_step*x
-        g.send([angle], True) # where % is the angle in degrees you want the part to go to
-        picture_data = take_picture (camera_port) ###########################################################!!!!!!!
+    for x in range(n):
+        angle = angle_step * x
+        g.send([angle], True) # where  angle is  in degrees you want the part to go to
+        picture_data = take_picture() 
 
         # record data in a list
         pictures_list.append(picture_data) 
@@ -87,19 +83,19 @@ def rotate_and_picture(pictures_total):
     #go back to initial position
     g.send([angle_step], True) # where % is the angle in degrees you want the part to go to
 
-    log.info("The {pictures_total} number of picture were sucessfully taken ")
+    log.info("The {n} number of picture were sucessfully taken ")
     return angle_step, pictures_list
 
 
-def test_split(list_test):
+# def test_split(list_test):
 
-    pictures_list = []
+#     pictures_list = []
 
-    for image in list_test:
-        imageB = cv2.imread(image) #[b,g,r]    
-        pictures_list.append(imageB)
+#     for image in list_test:
+#         imageB = cv2.imread(image) #[b,g,r]    
+#         pictures_list.append(imageB)
 
-    return pictures_list
+#     return pictures_list
 
 
 """Initial Alignement"""
