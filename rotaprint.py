@@ -27,9 +27,9 @@ import io
 import sys
 import traceback
 import math
+import numpy as np
 from skimage.metrics import structural_similarity
 import cv2
-import numpy as np
 from json import dumps, loads
 
 
@@ -768,10 +768,10 @@ class websocket:
 class vision:
     def connect(self):
         log.debug("Activating the desired camera...")
-        self.cap = cv2.VideoCapture(db.settings["video_device"])
+        self.cap = cv2.VideoCapture(int(db.settings["video_device"]))
 
         # Check if camera opened successfully
-        if (cap.isOpened() == False):
+        if (self.cap.isOpened() == False):
             log.error(
                 "Error opening video stream! Attempted use of vision system will fail!")
         else:
@@ -786,6 +786,10 @@ class vision:
 
     def rotate_and_picture(self, n):
         # Takes n pictures around the part, always starting at y = 0
+
+        # Turn on lighting
+        log.debug("Turning lights on")
+        g.toggle_lighting(True)
 
         log.info(f"Taking {n} picture(s) of the current part...")
 
@@ -828,9 +832,13 @@ class vision:
             delay = 2 * (s_limit / y_acceleration) ^ 0.5 + \
                 (angle_step - s_limit) / y_max_speed
 
+        log.debug(f"Calculated picture delay as {delay}s")
+
         for x in range(n):
             # Angle is the degrees you want the part to go to
             angle = angle_step * x
+
+            log.debug(f"Taking a picture at {angle}°")
 
             # Convert requested angle to GCODE command
             gcode = "G0Y" + str(angle)
@@ -847,60 +855,73 @@ class vision:
             # Record data in a list
             pictures_list.append(picture_data)
 
-        log.info(f"{n} picture(s) were sucessfully taken ")
+        log.info(f"{n} picture(s) were sucessfully taken")
 
-        return angle_step, pictures_list  # TODO is angle_step needed elsewhere?
+        # Turn off lighting
+        log.debug("Turning lights off")
+        g.toggle_lighting(False)
+
+        return pictures_list
 
     def initial_alignment_scan(self):
-        # Turn on lighting
-        g.toggle_lighting(True)
-
         # Store alignment images into variable (starting at y = 0)
-        self.angle_step_r, self.ref_image = self.rotate_and_picture(r)
-
-        # Turn off lighting
-        g.toggle_lighting(True)
+        self.ref_images = self.rotate_and_picture(
+            db.settings["reference_images"])
 
     def initial_quality_scan(self):
-        # Turn on lighting
-        g.toggle_lighting(True)
-
         # Store quality images into variable (starting at y = 0)
-        self.angle_step_r, self.quality_images = self.rotate_and_picture(r)
-
-        # Turn off lighting
-        g.toggle_lighting(True)
+        self.quality_images = self.rotate_and_picture(
+            db.settings["qc_images"])
 
     def alignment_scan(self):
+        log.info("Running initial alignment scan")
         # run scan with alignment reference images and n = number of comparison scan images
-        pass
+        comparison_images = self.rotate_and_picture(
+            db.settings["comparison_images"])
+
+        offset, _ = self.scan(self.ref_images, comparison_images)
+
+        return offset
 
     def quality_scan(self):
+        log.info("Running initial quality scan")
         # run scan with quality reference images and n = number of quality scan image
-        pass
+        comparison_images = self.rotate_and_picture(
+            db.settings["qc_images"])
 
-    def scan(self, reference_images, n):
+        _, score = self.scan(self.quality_images, comparison_images, True)
+
+        return score
+
+    def scan(self, reference_images, comparison_images, aligned=False):
         # Where reference_images are the images to compare against, and n is the number of new images to take
 
-        # Turn on lighting
-        g.toggle_lighting(True)
+        # The number of images required for reference and comparison
+        r = len(reference_images)
+        c = len(comparison_images)
 
-        # record "c" number of comparison images (to be compared against reference image as set of "r")
-        angle_step_c, com_images = rotate_and_picture(c)
+        scores = []  # List of all the scores per set
 
-        # Initialisation of lists
-        temp_score = []  # temporary list to use within loop to collect SSIM scores of a comparison for each colour
-        score_set = []  # list the scores of each comparison within a set
-        scores_per_sets = []  # Main list: list of the averages scores of each set
-
-        # compute the ideal step size to compare
+        # Determine ideal number of comparison images to skip for each reference image
         ideal_step = c / r
 
-        for start in range(c):
-            # Increment start comparison image
+        if aligned:
+            # For quality check scanning where part already aligned
+            tests = [0]
+        else:
+            # For alignment scanning only
+            tests = range(c)
+
+        for start in tests:
+            # Increment start comparison image.
+            # Next set
+
+            log.debug(f"Comparing image {start} of {tests}")
+
+            score_set = []
 
             for j, i in zip(np.arange(start, start + c, ideal_step, int), range(r)):
-                # Compare the comparison image against its supposedly correct the reference images (in terms of angle)
+                # Compare the comparison image against its supposedly correct reference images (in terms of angle)
                 # Check the score of similarity between those two images
                 # round j to nearest integer
 
@@ -909,34 +930,25 @@ class vision:
                     j = j - c
 
                 for colour in range(3):
-                    # loop over B,G,R pixels - in that order
-                    (score, _) = structural_similarity(
-                        ref_images[i][:, :, colour], com_images[j][:, :, colour], full=True)
+                    # Loop over B,G,R pixels - in that order
+                    score = structural_similarity(
+                        reference_images[i][:, :, colour], comparison_images[j][:, :, colour])
 
-                    temp_score.append(score)
+                    score_set.append(score)
 
-                # average the three colours scores for the given comparison
-                temp_score_avg = statistics.mean(temp_score)
-                # store that averaged score in score_set list
-                score_set.append(temp_score_avg)
-                temp_score.clear()  # clear list for next comparison
+            # After a set, average all scores of set
+            scores[start] = np.mean(score_set)
 
-            # after a set, average all scores of set
-            score_set_avg = statistics.mean(score_set)
-            # store that average set score in the main list
-            scores_per_sets.append(score_set_avg)
-            score_set.clear()  # clear list for next set
+        # Find the highest score of all sets, and return the index. If two same scores, it will take the first.
+        max_score = max(scores)
+        maxi = scores.index(max_score)
 
-        # find the highest score of all "c" sets
-        # return the index
-        maxi = scores_per_sets.index(max(scores_per_sets))
+        # Calculate the angle value corresponding to the maximum scoring comparison image set
+        offset = 360 * maxi / c
 
-        # the index indicates the offset angle to align part to desired priting position
-        # where % is the angle in degrees you want the part to go to
-        g.send([angle_step_w*maxi], True)
+        log.debug(f"Score: {max_score}\nOffset: {offset}")
 
-        # Turn off lighting
-        g.toggle_lighting(True)
+        return offset, max_score
 
 
 class grbl:
