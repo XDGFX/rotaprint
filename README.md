@@ -1,6 +1,6 @@
 <img width="100" alt="rotaprint icon" src="branding/logo_option3.svg">
 
-# rotaprint Manual
+# rotaprint
 
 _This project is a student project from the University of Bath, with sponsorship from DCA Design International. All content in this repository is owned by me. Due to the nature of this project, download or modification of this project and it's source code for **personal use and educational purposes** is allowed, however redistribution, publishing, or any use of code or other elements in different projects is **not allowed**._
 
