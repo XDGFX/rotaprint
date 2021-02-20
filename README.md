@@ -1,6 +1,14 @@
+<img width="100" alt="rotaprint icon" src="branding/logo_option3.svg">
+
 # rotaprint Manual
 
-Welcome to rotaprint, your all-in-one software solution for interfacing with the TDCA rotary printer. This manual is split into two sections; Setup, and Use. It is recommended you read the manual in full before first use. The [Quickstart](#Quickstart) guide can be used for reference after the machine has been set up already.
+_This project is a student project from the University of Bath, with sponsorship from DCA Design International. All content in this repository is owned by me. Due to the nature of this project, download or modification of this project and it's source code for **personal use and educational purposes** is allowed, however redistribution, publishing, or any use of code or other elements in different projects is **not allowed**._
+
+_All rights reserved._
+
+---
+
+Welcome to rotaprint, your all-in-one software solution for interfacing with the rotaprinter. This manual is split into two sections; Setup, and Use. It is recommended you read the manual in full before first use. The [Quickstart](#Quickstart) guide can be used for reference after the machine has been set up already.
 
 This is a guide, all information is up-to-date at the time of writing. If you are having issues, ensure you have followed each step correctly. The setup guide assumes you have some existing software experience, for example use of the command line.
 
@@ -291,7 +299,7 @@ If, at any point, you need to reset the software and start a new session, the re
 
 ## General Operation
 
-The standard operation using default settings for the TDCA rotary printer is as follows:
+The standard operation using default settings for the rotaprinter is as follows:
 
 1. A print program is loaded into the printer software through the UI.
 2. Settings such as number of parts in the batch, and part radius are configured.
@@ -345,7 +353,7 @@ The software is designed to work with standard UTF-8 plaintext GCODE (frequently
 |G0 A#  |Direct control of batch axis (A)|
 |G0 B#  |Direct control of colour axis (B)|
 
-Sample GCODE files have been provided under the `sample_files` folder, specifically `sample.gcode` is the TDCA logo in GCODE printed in colour A, and `sample_colour.gcode` is the same image with added colour changing. The original vector artwork is `sample.svg`, which is at 1:1 print scale.
+Sample GCODE files have been provided under the `sample_files` folder, specifically `sample.gcode` is a logo in GCODE printed in colour A, and `sample_colour.gcode` is the same image with added colour changing. The original vector artwork is `sample.svg`, which is at 1:1 print scale.
 
 ### Machine Controls
 
