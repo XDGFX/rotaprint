@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """
 Copyright (c) 2020
-This file is part of the TDCA rotary printer project.
+This file is part of the rotaprint project.
 
-Main script for running the TDCA rotary printer.
+Main script for running rotaprint.
 Written by Callum Morrison <callum.morrison@mac.com>
            and Hélène Verhaeghe <hv236@bath.ac.uk>, 2020
 
